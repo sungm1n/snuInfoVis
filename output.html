@@ -4,7 +4,49 @@
         <title>SnuInfoVis Term Project - GPS</title>
     </head>
     <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script>
+        let mData;
+        d3.json("data.json").then(function(data) {
+            mData = data;
+            init();
+        });
+
+        function init() {
+            console.log("mData size : " + mData.length);
+            let bts = getSongById("6Z7m5DLNPOaPg9T6nXK0rQ");
+            console.log("BTS - DNA");
+            console.log("- title : " + bts.title);
+            console.log("- artist : " + bts.artist);
+            console.log("- genre : " + bts.genre);
+            console.log("- date : " + bts.date);
+            console.log("- id : " + bts.id);
+            console.log("- key : " + bts.key);
+            console.log("- duration_ms : " + bts.duration_ms);
+            console.log("- mode : " + bts.mode);
+            console.log("- popularity : " + bts.poularity);
+            console.log("- tempo" + bts.tempo);
+            console.log("- loudness : " + bts.loudness);
+            console.log("- explicit : " + bts.explicit);
+            console.log("- acousticness : " + bts.acousticness);
+            console.log("- danceability : " + bts.danceability);
+            console.log("- energy : " + bts.energy);
+            console.log("- instrumentalness : " + bts.instrumentalness);
+            console.log("- liveness : " + bts.liveness);
+            console.log("- speechiness : " + bts.speechiness);
+            console.log("- valence : " + bts.valence);
+            d3.select("h1").text("Hello!");
+        }
+
+        function getSongById(id) {
+            for (let i = 0 ; i < mData.length ; i++) {
+                if (id == mData[i].id) {
+                    return mData[i];
+                }
+            }
+        }
+
+    </script>
     <body>
-        <h1>Hello</h1>
+        <h1>Loading...</h1>
     </body>
 </html>
