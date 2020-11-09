@@ -6,6 +6,15 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
         let mData;
+        let mMinYear = 2010;    // fix
+        let mMaxYear = 2020;    // fix
+        let mDataByYear = [];
+
+        let AREA_SVG_WIDTH = 500;
+        let AREA_SVG_HEIGHT = 500;
+        let AREA_MARGIN = {TOP:20, RIGHT:20, BOTTOM:30, LEFT:40};
+        let AREA_CHART_WIDTH = AREA_SVG_WIDTH - AREA_MARGIN.LEFT - AREA_MARGIN.RIGHT;
+        let AREA_CHART_HEIGHT = AREA_SVG_HEIGHT - AREA_MARGIN.TOP - AREA_MARGIN.BOTTOM;
         d3.json("data.json").then(function(data) {
             mData = data;
             init();
@@ -13,6 +22,8 @@
 
         function init() {
             console.log("mData size : " + mData.length);
+            d3.select("h1").text("Hello!");
+            /*
             let bts = getSongById("6Z7m5DLNPOaPg9T6nXK0rQ");
             console.log("BTS - DNA");
             console.log("- title : " + bts.title);
@@ -34,7 +45,9 @@
             console.log("- liveness : " + bts.liveness);
             console.log("- speechiness : " + bts.speechiness);
             console.log("- valence : " + bts.valence);
-            d3.select("h1").text("Hello!");
+            */
+
+            drawAreaChart();
         }
 
         function getSongById(id) {
@@ -45,8 +58,152 @@
             }
         }
 
+        function getSongsByYear(year) {
+            let ret = [];
+            for (let i = 0 ; i < mData.length ; i++) {
+                if (mData[i].date.substring(0, 4) == year) {
+                    ret.push(mData[i]);
+                }
+            }
+            return ret;
+        }
+
+
+        function getSimpleGenre(genre) {
+            let ret = null;
+            if (genre.startsWith("k-") || genre.includes("korean")) {
+                ret = "k-pop";
+            }
+
+            /*
+            if (ret == null && (genre.startsWith("j-") || genre.includes("japanese"))) {
+                ret = "j-pop";
+            }
+
+            if (ret == null && (genre.startsWith("c-") || genre.includes("chinese"))) {
+                ret = "c-pop";
+            }
+            */
+
+            if (ret == null &&
+                    (genre.includes("rap") || genre.includes("hip hop") || genre.includes("trap"))) {
+                ret = "hiphop";
+            }
+
+            if (ret == null && genre.includes("jazz")) {
+                ret = "jazz";
+            }
+
+            if  (ret == null && (genre.includes("rock") || genre.includes("metal"))) {
+                ret = "rock";
+            }
+
+            if (ret == null && genre.includes("ballad")) {
+                ret = "ballad";
+            }
+
+            if (ret == null && (genre.includes("r&b") || genre.includes("blues"))) {
+                ret = "r&b";
+            }
+
+            if (ret == null && (genre.includes("folk") || genre.includes("country"))) {
+                ret = "country";
+            }
+
+            if (ret == null && genre.includes("dance")) {
+                ret = "dance";
+            }
+
+            if (ret == null &&
+                    (genre.includes("classic") || genre.includes("orchestra") || genre.includes("opera"))) {
+                ret = "classic";
+            }
+
+            /*
+            if (ret == null && genre.includes("punk")) {
+                ret = "punk";
+            }
+            */
+
+            if (ret == null) {
+                ret = "others";
+            }
+
+            return ret;
+        }
+
+        function drawAreaChart(){
+            areaChartSvg = d3.select('#area');
+
+            /*
+            // get range for the chart - no. it needs to be fixed for drawing
+            for (let i = 0 ; i < mData.length ; i++) {
+                let year = mData[i].date.substring(0, 4);
+                mMinYear = Math.min(mMinYear, parseInt(year));
+                mMaxYear = Math.max(mMaxYear, parseInt(year));
+            }
+            //console.log("min year : " + mMinYear + ", max year : " + mMaxYear);
+            */
+
+            // axis
+            let areaX = d3.scaleLinear().domain([mMinYear, mMaxYear]).range([0, AREA_CHART_WIDTH]);
+            let areaXAxis = d3.axisBottom(areaX).tickFormat(d3.format("d"));
+            areaChartSvg.append("g").attr('transform', translate(AREA_MARGIN.LEFT,
+                    AREA_CHART_HEIGHT + AREA_MARGIN.TOP)).call(areaXAxis);
+
+            let areaY = d3.scaleLinear().domain([100, 0]).range([0, AREA_CHART_HEIGHT]);
+            let areaYAxis = d3.axisLeft(areaY);
+            areaChartSvg.append("g").attr('transform', translate(AREA_MARGIN.LEFT, AREA_MARGIN.TOP))
+                    .call(areaYAxis);
+
+            for (let i = mMinYear ; i <= mMaxYear ; i++) {
+                let cur = {};
+                cur.year = i;
+                cur.songs = [];
+                cur.genreCnt = {};
+                mDataByYear.push(cur);
+            }
+
+            for (let i = 0 ; i < mData.length ; i++) {
+                // console.log(mData[i].date);
+                // console.log(mData[i].date.substring(0, 4));
+                for (let j = 0 ; j < mDataByYear.length ; j++) {
+                    if (mDataByYear[j].year == parseInt(mData[i].date.substring(0, 4))) {
+                        mDataByYear[j].songs.push(mData[i]);
+
+                        // make genre count for each year
+                        let curSimpleGenre = getSimpleGenre(mData[i].genre);
+                        if (mDataByYear[j].genreCnt.hasOwnProperty(curSimpleGenre)) {
+                            mDataByYear[j].genreCnt[curSimpleGenre]++;
+                        } else {
+                            mDataByYear[j].genreCnt[curSimpleGenre] = 1;
+                        }
+                    }
+                }
+            }
+
+            for (let i = 0 ; i < mDataByYear.length ; i++) {
+                console.log("year : " + mDataByYear[i].year + ", songs : " + mDataByYear[i].songs.length);
+                console.log("genreCnt : ", mDataByYear[i].genreCnt);
+            }
+
+            let xUnit = AREA_CHART_WIDTH / (mMaxYear - mMinYear);
+            let yUnit = AREA_CHART_HEIGHT / 100;
+            let linePercentStacked = [];
+
+            // draw lines
+            for (let i = mDataByYear[0].year ; i < mDataByYear[mDataByYear.length - 1].year ; i++) {
+
+            }
+        }
+
+        function translate(x, y) {
+            return 'translate(' + x + ', ' + y + ')';
+        }
+
     </script>
     <body>
         <h1>Loading...</h1>
+        <svg id="area" width=500 height=500 style="border:black 1px solid"/>
     </body>
 </html>
