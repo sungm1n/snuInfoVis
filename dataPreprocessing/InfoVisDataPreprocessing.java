@@ -5,7 +5,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,7 @@ import org.json.simple.JSONObject;
 
 
 public class InfoVisDataPreprocessing {
-	
+
 	static Map<String, String> mArtistGenreMap = new HashMap<String, String>();
 	static List<Record> mRecordList = new ArrayList<Record>();
 	static String[] mCurFields = null;
@@ -23,8 +22,10 @@ public class InfoVisDataPreprocessing {
 	static int mCurIdIndex = -1;
 	static int mCurLineNumber = 1;
 
+	static Map<String, Integer> mGenreCountMap = new HashMap<String, Integer>(); // for test
+
 	public static void main(String[] args) {
-		
+
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("data_w_genres.csv"));
 			String curLine = br.readLine(); // ignore first label line
@@ -36,6 +37,7 @@ public class InfoVisDataPreprocessing {
 					continue;
 				}
 				String genre = parseGenre();
+				// countGenre(genre); // 1768
 				if (genre == null) {
 					continue;
 				}
@@ -44,18 +46,19 @@ public class InfoVisDataPreprocessing {
 			System.out.println("* Total artist-genre map size : " + mArtistGenreMap.size());
 			// System.out.println("is BTS exist? : " + mArtistGenreMap.containsKey("BTS"));
 			// System.out.println("BTS genre : " + mArtistGenreMap.get("BTS"));
+
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("data.csv"));
-			
+
 			String curLine = br.readLine(); // ignore first label line
 			while(curLine.endsWith(",") || curLine.endsWith(" ")) {
-				curLine = curLine.substring(0, curLine.length() - 1);				
+				curLine = curLine.substring(0, curLine.length() - 1);
 			}
 
 			// System.out.println(curLine);
@@ -65,26 +68,26 @@ public class InfoVisDataPreprocessing {
 				if (mCurId == null || mCurIdIndex < 6) {
 					continue;
 				}
-								
+
 				Record record = new Record();
 
 				record.artist = parseArtistForRecord();
 				if (record.artist == null) {
 					continue;
-				}								
+				}
 
 				record.title = parseTitle();
 				if (record.title == null) {
 					continue;
 				}
-				
+
 				record.id = mCurId;
 
 				record.date = parseDate();
 				if (record.date == null) {
 					continue;
 				}
-				
+
 				record.genre = getGenreByArtist(record.artist);
 				if (record.genre == null) {
 					continue;
@@ -99,80 +102,94 @@ public class InfoVisDataPreprocessing {
 				record.key = parseKey();
 				if (record.key == Double.MIN_VALUE) {
 					continue;
-				}				
-								
+				}
+
 				record.mode = parseMode();
 				if (record.mode == Double.MIN_VALUE) {
 					continue;
 				}
-				
+
 				record.popularity = parsePopularity();
 				if (record.popularity == Double.MIN_VALUE) {
 					continue;
 				}
-				
+
 				record.tempo = parseTempo();
 				if (record.tempo == Double.MIN_VALUE) {
 					continue;
 				}
-				
+
 				record.loudness = parseLoudness();
 				if (record.loudness == Double.MIN_VALUE) {
 					continue;
-				}				
-				
+				}
+
 				record.explicit = parseExplicit();
 				if (record.explicit == Double.MIN_VALUE) {
 					continue;
-				}				
-				
-				// 7 emotional values		
+				}
+
+				// 7 emotional values
 				record.acousticness = parseAcousticness();
 				if (record.acousticness == Double.MIN_VALUE) {
 					continue;
 				}
-				
+
 				record.danceability = parseDanceability();
 				if (record.danceability == Double.MIN_VALUE) {
 					continue;
-				}				
-				
+				}
+
 				record.energy = parseEnergy();
 				if (record.energy == Double.MIN_VALUE) {
 					continue;
-				}				
-								
+				}
+
 				record.instrumentalness = parseInstrumentalness();
 				if (record.energy == Double.MIN_VALUE) {
 					continue;
 				}
-				
+
 				record.liveness = parseLiveness();
 				if (record.liveness == Double.MIN_VALUE) {
 					continue;
-				}				
-				
+				}
+
 				record.speechiness = parseSpeechiness();
 				if (record.speechiness == Double.MIN_VALUE) {
 					continue;
-				}				
-				
+				}
+
 				record.valence = parseValence();
 				if (record.valence == Double.MIN_VALUE) {
 					continue;
 				}
-				
+
 				// System.out.println(record.toString());
 				mRecordList.add(record);
+				countGenre(record.genre);
 			}
 			System.out.println("* Total records : " + mRecordList.size());
-			writeRecordsAsJson();			
+			System.out.println("* Genre counts : " + mGenreCountMap.size() + " genre(s)");
+			for (String s : mGenreCountMap.keySet()) {
+				System.out.println(s + " : " + mGenreCountMap.get(s));
+			}
+
+			writeRecordsAsJson();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	private static void countGenre(String genre) {
+		if (mGenreCountMap.containsKey(genre)) {
+			mGenreCountMap.put(genre, mGenreCountMap.get(genre) + 1);
+		} else {
+			mGenreCountMap.put(genre, 1);
 		}
 	}
 
@@ -200,10 +217,10 @@ public class InfoVisDataPreprocessing {
 			cur.put("liveness", String.valueOf(r.liveness));
 			cur.put("speechiness", String.valueOf(r.speechiness));
 			cur.put("valence", String.valueOf(r.valence));
-			
+
 			jsonArr.add(cur);
 		}
-		
+
 		//System.out.println(jsonArr.toJSONString());
 		try {
 			FileWriter fileWriter = new FileWriter("data.json");
@@ -224,34 +241,43 @@ public class InfoVisDataPreprocessing {
 				break;
 			}
 		}
-		
+
 		if (firstGenre == null) {
-			//System.out.println("Couldn't parse genre for " + mCurFields[0] + " at line "
-			//		+ mCurLineNumber + " then ignored.");
+			System.out.println("Couldn't parse genre for " + mCurFields[0] + " at line "
+					+ mCurLineNumber + " then ignored.");
 		} else {
-			firstGenre = firstGenre.replaceAll("[^a-zA-Z0-9 .-]", "");
+//			firstGenre = firstGenre.replaceAll("[^a-zA-Z0-9 .-&]", "");
+			firstGenre = firstGenre.replaceAll("\\[", "");
+			firstGenre = firstGenre.replaceAll("\'", "");
+			firstGenre = firstGenre.replaceAll("\"", "");
+			firstGenre = firstGenre.replaceAll("\\]", "");
+			// firstGenre = simplifyFirstGenre(firstGenre);/
 		}
 
 		return firstGenre;
+	}
+
+	private static String simplifyFirstGenre(String firstGenre) {
+		return null;
 	}
 
 	private static String parseArtistForGenreMap() {
 		String ret = mCurFields[0];
 		ret = ret.replaceAll("[^a-zA-Z0-9 .-]", "");
 		ret = ret.trim();
-		
+
 		if (ret.isBlank() || ret.isEmpty()) {
 			// System.out.println("Couldn't parse Artist " + mCurFields[0] + " in genre data then ignored.");
 			return null;
 		}
-		return ret;		
+		return ret;
 
 	}
 
 	private static void updateCurIdAndIndex() {
 		String id = null;
 		int index = 6;
-		
+
 		for (int i = 6 ; i < mCurFields.length ; i++) {
 			if (!Character.isDigit(mCurFields[i].charAt(0))) {
 				continue;
@@ -263,14 +289,14 @@ public class InfoVisDataPreprocessing {
 			index = i;
 			break;
 		}
-		
+
 		if (id == null) {
 			//System.out.println("Couldn't parse ID then ignored.");
 			mCurId = null;
 			mCurIdIndex = -1;
 			return;
 		}
-		
+
 		mCurId = id;
 		mCurIdIndex = index;
 	}
@@ -284,12 +310,12 @@ public class InfoVisDataPreprocessing {
 	}
 
 	private static double parseValence() {
-		double ret = Double.parseDouble(mCurFields[ mCurFields.length - 2 ]);	
+		double ret = Double.parseDouble(mCurFields[ mCurFields.length - 2 ]);
 		if (ret > 1 || ret < 0) {
 			//System.out.println("Invalid Valence of ID " + mCurId + " then ignored.");
 			return Double.MIN_VALUE;
 		}
-		// System.out.println(String.format("%.7f", ret));		
+		// System.out.println(String.format("%.7f", ret));
 		return ret;
 	}
 
@@ -319,7 +345,7 @@ public class InfoVisDataPreprocessing {
 			//System.out.println("Invalid Instrumentalness of ID " + mCurId + " then ignored.");
 			return Double.MIN_VALUE;
 		}
-		//System.out.println(String.format("%.7f", ret));				
+		//System.out.println(String.format("%.7f", ret));
 		return ret;
 	}
 
@@ -350,8 +376,8 @@ public class InfoVisDataPreprocessing {
 			return Double.MIN_VALUE;
 		}
 		//System.out.println(String.format("%.7f", ret));
-		return ret;		
-	
+		return ret;
+
 	}
 
 	private static double parseLoudness() {
@@ -377,12 +403,12 @@ public class InfoVisDataPreprocessing {
 	private static double parsePopularity() {
 		double ret = -1;
 		try {
-			ret = Double.parseDouble(mCurFields[ mCurFields.length - 6 ]); 
+			ret = Double.parseDouble(mCurFields[ mCurFields.length - 6 ]);
 		} catch (NumberFormatException e) {
 			 //System.out.println("Couldn't parse Popularity of ID " + mCurId + " from "
 			//		 + mCurFields[ mCurFields.length - 6 ]);
 			return Double.MIN_VALUE;
-		}		
+		}
 		if (ret < 0) {
 			//System.out.println("Invalid Popularity of ID " + mCurId + " then ignored.");
 			return Double.MIN_VALUE;
@@ -427,16 +453,16 @@ public class InfoVisDataPreprocessing {
 			//System.out.println("Couldn't parse Date of ID " + mCurId + " then ignored.");
 			return null;
 		}
-		
+
 		if (ret.length() == 4) {
 			ret += "-01-01";
 		}
-		
+
 		if (!ret.matches("^(\\d{4})-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])$")) {
 			//System.out.println("Invalid Date of ID " + mCurId + " then ignored.");
 			return null;
 		}
-				
+
 		return ret;
 	}
 
@@ -453,11 +479,11 @@ public class InfoVisDataPreprocessing {
 		ret = ret.replaceAll("ñ", "n");
 		ret = ret.replaceAll("ó", "o");
 		ret = ret.replaceAll(" É", "e");
-		ret = ret.replaceAll("í", "i");				
+		ret = ret.replaceAll("í", "i");
 		ret = ret.replaceAll("[^a-zA-Z0-9 .-] ", "");
 		if (ret.indexOf("(") != -1) {
-			ret = ret.substring(0, ret.indexOf("("));			
-		}		
+			ret = ret.substring(0, ret.indexOf("("));
+		}
 		ret = ret.trim();
 		if (ret.startsWith("\"") ) {
 			ret = ret.substring(1, ret.length());
@@ -467,14 +493,14 @@ public class InfoVisDataPreprocessing {
 		}
 		ret = ret.replaceAll("\"\"", "\"");
 
-		if (ret.isEmpty() || ret.isBlank() || 
+		if (ret.isEmpty() || ret.isBlank() ||
 				!Charset.forName("US-ASCII").newEncoder().canEncode(ret)) {
 			//System.out.println("Couldn't parse Title of ID " + mCurId + " then ignored.");
 			return null;
 		}
-		
+
 		// System.out.println("ID : " + parseId(fields) + " title : " + ret);
-		
+
 		return ret;
 	}
 
@@ -482,7 +508,7 @@ public class InfoVisDataPreprocessing {
 		String ret = mCurFields[1].replaceAll("é", "e");
 		ret = ret.replaceAll("[^a-zA-Z0-9 .-]", "");
 		ret = ret.trim();
-		
+
 		if (ret.isBlank()) {
 			// System.out.println("Couldn't parse Artist of ID " + mCurId + " then ignored.");
 			return null;
@@ -499,7 +525,7 @@ public class InfoVisDataPreprocessing {
 		// System.out.println(String.format("%.7f", ret));
 		return ret;
 	}
-	
+
 	private static int getIdFieldIndex(String[] fields) {
 		for (int i = 6 ; i < fields.length ; i++) {
 			if (!Character.isDigit(fields[i].charAt(0))) {
@@ -515,24 +541,24 @@ public class InfoVisDataPreprocessing {
 }
 
 class Record {
-	// Note. ignore 'year' field due to date. add genre field. 
+	// Note. ignore 'year' field due to date. add genre field.
 	// general values
-	String title;	
+	String title;
 	String artist;	// care ONE artist only.
 	String id;
 	String date;
 	String genre;
 
 	// 7 scalable values
-	double duration_ms;	
+	double duration_ms;
 	double key;
 	double mode;
 	double popularity;
 	double tempo;
 	double loudness;
 	double explicit;
-	
-	// 7 emotional values		
+
+	// 7 emotional values
 	double acousticness;
 	double danceability;
 	double energy;
@@ -540,7 +566,8 @@ class Record {
 	double liveness;
 	double speechiness;
 	double valence;
-	
+
+	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 		buf.append("* Title : ").append(title).append("\n");
@@ -564,6 +591,6 @@ class Record {
 		buf.append("  5. liveness : ").append(liveness).append("\n");
 		buf.append("  6. speechiness : ").append(speechiness).append("\n");
 		buf.append("  7. valence : ").append(valence).append("\n");
-		return buf.toString(); 
+		return buf.toString();
 	}
 }
