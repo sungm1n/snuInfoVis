@@ -5,16 +5,23 @@
     </head>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
-        let mData;
-        let mMinYear = 2010;    // fix
-        let mMaxYear = 2020;    // fix
-        let mDataByYear = [];
 
-        let AREA_SVG_WIDTH = 500;
-        let AREA_SVG_HEIGHT = 500;
-        let AREA_MARGIN = {TOP:20, RIGHT:20, BOTTOM:30, LEFT:40};
-        let AREA_CHART_WIDTH = AREA_SVG_WIDTH - AREA_MARGIN.LEFT - AREA_MARGIN.RIGHT;
-        let AREA_CHART_HEIGHT = AREA_SVG_HEIGHT - AREA_MARGIN.TOP - AREA_MARGIN.BOTTOM;
+        let SVG_AREA_WIDTH = 500;
+        let SVG_AREA_HEIGHT = 500;
+        let AREA_MARGINS = {TOP:20, RIGHT:20, BOTTOM:30, LEFT:40};
+        let AREA_WIDTH = SVG_AREA_WIDTH - AREA_MARGINS.LEFT - AREA_MARGINS.RIGHT;
+        let AREA_HEIGHT = SVG_AREA_HEIGHT - AREA_MARGINS.TOP - AREA_MARGINS.BOTTOM;
+        let GENRE_CATEGORY = ['k-pop', 'hiphop', 'classic', 'rock', 'r&b', 'jazz', 'country', 'pop']
+
+        let mData; // load json
+        let mMinYear = 1970; // fixed
+        let mMaxYear = 0;
+
+        let mSelectedYear = 2010;
+        let mSelectedsimpleGenre = GENRE_CATEGORY[0];
+        let mSelectedIndex = "danceability";
+        let mSelectedPopularity = 72;
+
         d3.json("data.json").then(function(data) {
             mData = data;
             init();
@@ -23,7 +30,7 @@
         function init() {
             console.log("mData size : " + mData.length);
             d3.select("h1").text("Hello!");
-            /*
+
             let bts = getSongById("6Z7m5DLNPOaPg9T6nXK0rQ");
             console.log("BTS - DNA");
             console.log("- title : " + bts.title);
@@ -34,7 +41,7 @@
             console.log("- key : " + bts.key);
             console.log("- duration_ms : " + bts.duration_ms);
             console.log("- mode : " + bts.mode);
-            console.log("- popularity : " + bts.poularity);
+            console.log("- popularity : " + bts.popularity);
             console.log("- tempo : " + bts.tempo);
             console.log("- loudness : " + bts.loudness);
             console.log("- explicit : " + bts.explicit);
@@ -45,9 +52,69 @@
             console.log("- liveness : " + bts.liveness);
             console.log("- speechiness : " + bts.speechiness);
             console.log("- valence : " + bts.valence);
+            /*
+            let twoNE1 = getSongById("26EM9sZnQkLLQxixGd88KE");
+            console.log("2NE1 - I Am The Best");
+            console.log("- title : " + twoNE1.title);
+            console.log("- artist : " + twoNE1.artist);
+            console.log("- genre : " + twoNE1.genre);
+            console.log("- date : " + twoNE1.date);
+            console.log("- id : " + twoNE1.id);
+            console.log("- key : " + twoNE1.key);
+            console.log("- duration_ms : " + twoNE1.duration_ms);
+            console.log("- mode : " + twoNE1.mode);
+            console.log("- popularity : " + twoNE1.popularity);
+            console.log("- tempo : " + twoNE1.tempo);
+            console.log("- loudness : " + twoNE1.loudness);
+            console.log("- explicit : " + twoNE1.explicit);
+            console.log("- acousticness : " + twoNE1.acousticness);
+            console.log("- danceability : " + twoNE1.danceability);
+            console.log("- energy : " + twoNE1.energy);
+            console.log("- instrumentalness : " + twoNE1.instrumentalness);
+            console.log("- liveness : " + twoNE1.liveness);
+            console.log("- speechiness : " + twoNE1.speechiness);
+            console.log("- valence : " + twoNE1.valence);
+
+            let girlsGeneration = getSongById("2BQIMF7CyLe2xAKzh74A4C");
+            console.log("Girls Generation - Gee");
+            console.log("- title : " + girlsGeneration.title);
+            console.log("- artist : " + girlsGeneration.artist);
+            console.log("- genre : " + girlsGeneration.genre);
+            console.log("- date : " + girlsGeneration.date);
+            console.log("- id : " + girlsGeneration.id);
+            console.log("- key : " + girlsGeneration.key);
+            console.log("- duration_ms : " + girlsGeneration.duration_ms);
+            console.log("- mode : " + girlsGeneration.mode);
+            console.log("- popularity : " + girlsGeneration.popularity);
+            console.log("- tempo : " + girlsGeneration.tempo);
+            console.log("- loudness : " + girlsGeneration.loudness);
+            console.log("- explicit : " + girlsGeneration.explicit);
+            console.log("- acousticness : " + girlsGeneration.acousticness);
+            console.log("- danceability : " + girlsGeneration.danceability);
+            console.log("- energy : " + girlsGeneration.energy);
+            console.log("- instrumentalness : " + girlsGeneration.instrumentalness);
+            console.log("- liveness : " + girlsGeneration.liveness);
+            console.log("- speechiness : " + girlsGeneration.speechiness);
+            console.log("- valence : " + girlsGeneration.valence);
             */
 
+            // update year range from data.
+            for (let i = 0 ; i < mData.length ; i++) {
+                let year = mData[i].date.substring(0, 4);
+                // mMinYear = Math.min(mMinYear, parseInt(year));
+                mMaxYear = Math.max(mMaxYear, parseInt(year));
+            }
+            console.log("min year : " + mMinYear + ", max year : " + mMaxYear);
+
             drawAreaChart();
+            drawVasePlot();
+            drawLineChart();
+            drawTable();
+        }
+
+        // -------------------- UTIL apis --------------------
+        function translate(x, y) {
+            return 'translate(' + x + ', ' + y + ')';
         }
 
         function getSongById(id) {
@@ -68,137 +135,123 @@
             return ret;
         }
 
-
-        function getSimpleGenre(genre) {
-            let ret = null;
-            if (genre.startsWith("k-") || genre.includes("korean")) {
-                ret = "k-pop";
+        function getColorByGenre(simpleGenre) {
+            for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
+                if (simpleGenre == GENRE_CATEGORY[i]) {
+                    return d3.schemeCategory10[i];
+                }
             }
-
-            /*
-            if (ret == null && (genre.startsWith("j-") || genre.includes("japanese"))) {
-                ret = "j-pop";
-            }
-
-            if (ret == null && (genre.startsWith("c-") || genre.includes("chinese"))) {
-                ret = "c-pop";
-            }
-            */
-
-            if (ret == null &&
-                    (genre.includes("rap") || genre.includes("hip hop") || genre.includes("trap"))) {
-                ret = "hiphop";
-            }
-
-            if (ret == null && genre.includes("jazz")) {
-                ret = "jazz";
-            }
-
-            if  (ret == null && (genre.includes("rock") || genre.includes("metal"))) {
-                ret = "rock";
-            }
-
-            if (ret == null && genre.includes("ballad")) {
-                ret = "ballad";
-            }
-
-            if (ret == null && (genre.includes("r&b") || genre.includes("blues"))) {
-                ret = "r&b";
-            }
-
-            if (ret == null && (genre.includes("folk") || genre.includes("country"))) {
-                ret = "country";
-            }
-
-            if (ret == null && genre.includes("dance")) {
-                ret = "dance";
-            }
-
-            if (ret == null &&
-                    (genre.includes("classic") || genre.includes("orchestra") || genre.includes("opera"))) {
-                ret = "classic";
-            }
-
-            /*
-            if (ret == null && genre.includes("punk")) {
-                ret = "punk";
-            }
-            */
-
-            if (ret == null) {
-                ret = "others";
-            }
-
-            return ret;
         }
 
-        function drawAreaChart(){
-            areaChartSvg = d3.select('#area');
-
-            /*
-            // get range for the chart - no. it needs to be fixed for drawing
-            for (let i = 0 ; i < mData.length ; i++) {
-                let year = mData[i].date.substring(0, 4);
-                mMinYear = Math.min(mMinYear, parseInt(year));
-                mMaxYear = Math.max(mMaxYear, parseInt(year));
-            }
-            //console.log("min year : " + mMinYear + ", max year : " + mMaxYear);
-            */
+        // -------------------- DRAWING APIs --------------------
+        function drawAreaChart() {
+            let areaChartSvg = d3.select('#area');
+            let dataByYear = [];
 
             // axis
-            let areaX = d3.scaleLinear().domain([mMinYear, mMaxYear]).range([0, AREA_CHART_WIDTH]);
+            let areaX = d3.scaleLinear().domain([mMinYear, mMaxYear + 1 /* +1 for 2020 data */ ])
+                    .range([0, AREA_WIDTH]);
             let areaXAxis = d3.axisBottom(areaX).tickFormat(d3.format("d"));
-            areaChartSvg.append("g").attr('transform', translate(AREA_MARGIN.LEFT,
-                    AREA_CHART_HEIGHT + AREA_MARGIN.TOP)).call(areaXAxis);
+            areaChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT,
+                    AREA_HEIGHT + AREA_MARGINS.TOP)).call(areaXAxis);
 
-            let areaY = d3.scaleLinear().domain([100, 0]).range([0, AREA_CHART_HEIGHT]);
+            let areaY = d3.scaleLinear().domain([100, 0]).range([0, AREA_HEIGHT]);
             let areaYAxis = d3.axisLeft(areaY);
-            areaChartSvg.append("g").attr('transform', translate(AREA_MARGIN.LEFT, AREA_MARGIN.TOP))
+            areaChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
                     .call(areaYAxis);
 
-            for (let i = mMinYear ; i <= mMaxYear ; i++) {
-                let cur = {};
-                cur.year = i;
-                cur.songs = [];
-                cur.genreCnt = {};
-                mDataByYear.push(cur);
+            let xUnit = AREA_WIDTH / (mMaxYear - mMinYear);
+            let yUnit = AREA_HEIGHT / 100;
+
+            // prepare prev values
+            let prevSongs = getSongsByYear(mMinYear - 1);
+            let prevData = {};
+
+            for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
+                prevData[ GENRE_CATEGORY[ i ] ] = 0;
             }
 
-            for (let i = 0 ; i < mData.length ; i++) {
-                // console.log(mData[i].date);
-                // console.log(mData[i].date.substring(0, 4));
-                for (let j = 0 ; j < mDataByYear.length ; j++) {
-                    if (mDataByYear[j].year == parseInt(mData[i].date.substring(0, 4))) {
-                        mDataByYear[j].songs.push(mData[i]);
-
-                        // make genre count for each year
-                        let curSimpleGenre = getSimpleGenre(mData[i].genre);
-                        if (mDataByYear[j].genreCnt.hasOwnProperty(curSimpleGenre)) {
-                            mDataByYear[j].genreCnt[curSimpleGenre]++;
-                        } else {
-                            mDataByYear[j].genreCnt[curSimpleGenre] = 1;
-                        }
+            for (let i = 0 ; i < prevSongs.length ; i++) {
+                for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
+                    if (prevSongs[i].genre == GENRE_CATEGORY[j]) {
+                        prevData[ GENRE_CATEGORY[j] ]++;
                     }
                 }
             }
 
-            for (let i = 0 ; i < mDataByYear.length ; i++) {
-                console.log("year : " + mDataByYear[i].year + ", songs : " + mDataByYear[i].songs.length);
-                console.log("genreCnt : ", mDataByYear[i].genreCnt);
-            }
+            /*
+            d3.select('#area').append('path').attr('class', 'k-pop')
+                        .attr('fill', getColorBySimpleGenre('k-pop'))
+                        .attr('stroke', getColorBySimpleGenre('k-pop'))
+                        .attr('d', 'M ' + 100 + ' ' + 100 + ' L ' + 200 + ' ' + 200);
+            */
+            /*
+            console.log("prevSongs.length : " + prevSongs.length);
+            console.log("prevData : ");
+            console.log(prevData);
+            */
 
-            let xUnit = AREA_CHART_WIDTH / (mMaxYear - mMinYear);
-            let yUnit = AREA_CHART_HEIGHT / 100;
-            let linePercentStacked = [];
+            // year loop for lines
+            for (let i = mMinYear ; i <= mMaxYear ; i++) {
+                let curSongs = getSongsByYear(i);
+                let curData  = {};
+                for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
+                    curData[ GENRE_CATEGORY[j] ] = 0;
+                }
 
-            // draw lines
-            for (let i = mDataByYear[0].year ; i < mDataByYear[mDataByYear.length - 1].year ; i++) {
+                // console.log(curData);
+                for (let j = 0 ; j < curSongs.length ; j++) {
+                    for (let k = 0 ; k < GENRE_CATEGORY.length ; k++) {
+                        if (curSongs[j].genre == GENRE_CATEGORY[ k ]) {
+                            curData[ GENRE_CATEGORY[ k ] ]++;
+                        }
+                    }
+                }
 
+                console.log("year : " + i + ", songs : " + curSongs.length);
+                console.log(curData);
+
+                /*
+                // lines
+                let accumulatedY = 0;
+                let prevX = AREA_MARGINS.LEFT + ((i - mMinYear) * xUnit);
+                let curX = prevX + xUnit;
+                for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
+                    let curSimpleGenre = GENRE_CATEGORY[ j ];
+                    let prevY = (prevData[ curSimpleGenre ] / prevSongs.length) * 100; // percentage
+                    console.log("prevData[ curSimpleGenre ] : " + prevData[ curSimpleGenre ]);
+
+                    let curY = (curData[ curSimpleGenre ] / curSongs.length) * 100; // percentage
+                    console.log("curYear : " + i + " curGenre : " + curSimpleGenre + " prevX : "
+                            + prevX + " prevY : " + prevY + " curX : " + curX + " curY : " + curY);
+                    d3.select('#area').append('path').attr('class', curSimpleGenre)
+                            .attr('stroke', getColorBySimpleGenre(curSimpleGenre))
+                            .attr('fill', getColorBySimpleGenre(curSimpleGenre))
+                            .attr('d', 'M ' + prevX + ' ' + AREA_HEIGHT - (prevY * yUnit)
+                                    + ' L ' + curX + ' ' + AREA_HEIGHT - (curY * yUnit));
+                    accumulatedY += curY;
+                }
+                */
             }
         }
 
-        function translate(x, y) {
-            return 'translate(' + x + ', ' + y + ')';
+        function drawVasePlot() {
+            // TODO 조남우 draws a chart considering mSelectedYear, mSelectedGenre.
+            // TODO update mSelectedIndex as user selection.
+            // TODO call drawLineChart().
+        }
+
+        function drawLineChart() {
+            // TODO 석상윤 draws a chart considering mSelectedYear, mSelectedGenre, mSelectedIndex
+            // TODO update mSelectedPopularity as user selection.
+            // TODO call drawTable().
+        }
+
+        function drawTable() {
+            // TODO 남재호 draws a song table filtered by mSelectedYear, mSelectedGenre,
+            //      mSelectedIndex, mSelectedPopularity
+            // TODO show more info for a song when mouse on
+            // TODO open selected song's spotify url.
         }
 
     </script>
