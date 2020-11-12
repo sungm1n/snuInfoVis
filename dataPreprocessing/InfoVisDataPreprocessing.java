@@ -234,30 +234,47 @@ public class InfoVisDataPreprocessing {
 	}
 
 	private static String parseGenre() {
-		String firstGenre = null;
+		String genreStr = null;
 		for (int i = 5/*min idx*/ ; i < mCurFields.length ; i++) {
 			if (mCurFields[i].startsWith("[\'") || mCurFields[i].startsWith("\"[\'")) {
-				firstGenre = mCurFields[i];
+				for (int j = i ; j < mCurFields.length ;j ++) {
+					genreStr += mCurFields[j];
+				}
 				break;
 			}
 		}
 
-		if (firstGenre == null) {
+		if (genreStr == null) {
 			System.out.println("Couldn't parse genre for " + mCurFields[0] + " at line "
 					+ mCurLineNumber + " then ignored.");
 		} else {
-//			firstGenre = firstGenre.replaceAll("[^a-zA-Z0-9 .-&]", "");
-			firstGenre = firstGenre.replaceAll("\\[", "");
-			firstGenre = firstGenre.replaceAll("\'", "");
-			firstGenre = firstGenre.replaceAll("\"", "");
-			firstGenre = firstGenre.replaceAll("\\]", "");
-			// firstGenre = simplifyFirstGenre(firstGenre);/
+			System.out.println(mCurLineNumber + "] cur genre str :" + genreStr);
+			if (genreStr.contains("\'k-pop\'")){
+				return "k-pop";
+			}
+			if (genreStr.contains("\'hip hop\'")) {
+				return "hiphop";
+			}
+			if (genreStr.contains("\'classical\'")) {
+				return "classic";
+			}
+			if (genreStr.contains("\'rock\'")) {
+				return "rock";
+			}
+			if (genreStr.contains("\'r&b\'")) {
+				return "r&b";
+			}
+			if (genreStr.contains("\'jazz\'")) {
+				return "jazz";
+			}
+			if (genreStr.contains("\'country\'")) {
+				return "country";
+			}
+			if (genreStr.contains("\'pop\'")) {
+				return "pop";
+			}
 		}
 
-		return firstGenre;
-	}
-
-	private static String simplifyFirstGenre(String firstGenre) {
 		return null;
 	}
 
