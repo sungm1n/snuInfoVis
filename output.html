@@ -18,7 +18,7 @@
         let mMaxYear = 0;
 
         let mSelectedYear = 2010;
-        let mSelectedsimpleGenre = GENRE_CATEGORY[0];
+        let mSelectedGenre = GENRE_CATEGORY[0];
         let mSelectedIndex = "danceability";
         let mSelectedPopularity = 72;
 
@@ -31,80 +31,12 @@
             console.log("mData size : " + mData.length);
             d3.select("h1").text("Hello!");
 
-            let bts = getSongById("6Z7m5DLNPOaPg9T6nXK0rQ");
-            console.log("BTS - DNA");
-            console.log("- title : " + bts.title);
-            console.log("- artist : " + bts.artist);
-            console.log("- genre : " + bts.genre);
-            console.log("- date : " + bts.date);
-            console.log("- id : " + bts.id);
-            console.log("- key : " + bts.key);
-            console.log("- duration_ms : " + bts.duration_ms);
-            console.log("- mode : " + bts.mode);
-            console.log("- popularity : " + bts.popularity);
-            console.log("- tempo : " + bts.tempo);
-            console.log("- loudness : " + bts.loudness);
-            console.log("- explicit : " + bts.explicit);
-            console.log("- acousticness : " + bts.acousticness);
-            console.log("- danceability : " + bts.danceability);
-            console.log("- energy : " + bts.energy);
-            console.log("- instrumentalness : " + bts.instrumentalness);
-            console.log("- liveness : " + bts.liveness);
-            console.log("- speechiness : " + bts.speechiness);
-            console.log("- valence : " + bts.valence);
-            /*
-            let twoNE1 = getSongById("26EM9sZnQkLLQxixGd88KE");
-            console.log("2NE1 - I Am The Best");
-            console.log("- title : " + twoNE1.title);
-            console.log("- artist : " + twoNE1.artist);
-            console.log("- genre : " + twoNE1.genre);
-            console.log("- date : " + twoNE1.date);
-            console.log("- id : " + twoNE1.id);
-            console.log("- key : " + twoNE1.key);
-            console.log("- duration_ms : " + twoNE1.duration_ms);
-            console.log("- mode : " + twoNE1.mode);
-            console.log("- popularity : " + twoNE1.popularity);
-            console.log("- tempo : " + twoNE1.tempo);
-            console.log("- loudness : " + twoNE1.loudness);
-            console.log("- explicit : " + twoNE1.explicit);
-            console.log("- acousticness : " + twoNE1.acousticness);
-            console.log("- danceability : " + twoNE1.danceability);
-            console.log("- energy : " + twoNE1.energy);
-            console.log("- instrumentalness : " + twoNE1.instrumentalness);
-            console.log("- liveness : " + twoNE1.liveness);
-            console.log("- speechiness : " + twoNE1.speechiness);
-            console.log("- valence : " + twoNE1.valence);
-
-            let girlsGeneration = getSongById("2BQIMF7CyLe2xAKzh74A4C");
-            console.log("Girls Generation - Gee");
-            console.log("- title : " + girlsGeneration.title);
-            console.log("- artist : " + girlsGeneration.artist);
-            console.log("- genre : " + girlsGeneration.genre);
-            console.log("- date : " + girlsGeneration.date);
-            console.log("- id : " + girlsGeneration.id);
-            console.log("- key : " + girlsGeneration.key);
-            console.log("- duration_ms : " + girlsGeneration.duration_ms);
-            console.log("- mode : " + girlsGeneration.mode);
-            console.log("- popularity : " + girlsGeneration.popularity);
-            console.log("- tempo : " + girlsGeneration.tempo);
-            console.log("- loudness : " + girlsGeneration.loudness);
-            console.log("- explicit : " + girlsGeneration.explicit);
-            console.log("- acousticness : " + girlsGeneration.acousticness);
-            console.log("- danceability : " + girlsGeneration.danceability);
-            console.log("- energy : " + girlsGeneration.energy);
-            console.log("- instrumentalness : " + girlsGeneration.instrumentalness);
-            console.log("- liveness : " + girlsGeneration.liveness);
-            console.log("- speechiness : " + girlsGeneration.speechiness);
-            console.log("- valence : " + girlsGeneration.valence);
-            */
-
             // update year range from data.
             for (let i = 0 ; i < mData.length ; i++) {
                 let year = mData[i].date.substring(0, 4);
-                // mMinYear = Math.min(mMinYear, parseInt(year));
+                // mMinYear = Math.min(mMinYear, parseInt(year)); // mMinYear needs to be fixed.
                 mMaxYear = Math.max(mMaxYear, parseInt(year));
             }
-            console.log("min year : " + mMinYear + ", max year : " + mMaxYear);
 
             drawAreaChart();
             drawVasePlot();
@@ -135,10 +67,11 @@
             return ret;
         }
 
-        function getColorByGenre(simpleGenre) {
+        function getColorByGenre(genre) {
             for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
-                if (simpleGenre == GENRE_CATEGORY[i]) {
-                    return d3.schemeCategory10[i];
+                if (genre == GENRE_CATEGORY[i]) {
+                    //return d3.schemeCategory10[i];
+                    return d3.schemeSet3[i];
                 }
             }
         }
@@ -146,7 +79,6 @@
         // -------------------- DRAWING APIs --------------------
         function drawAreaChart() {
             let areaChartSvg = d3.select('#area');
-            let dataByYear = [];
 
             // axis
             let areaX = d3.scaleLinear().domain([mMinYear, mMaxYear + 1 /* +1 for 2020 data */ ])
@@ -160,17 +92,20 @@
             areaChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
                     .call(areaYAxis);
 
-            let xUnit = AREA_WIDTH / (mMaxYear - mMinYear);
+            let xUnit = AREA_WIDTH / (mMaxYear - mMinYear + 1);
             let yUnit = AREA_HEIGHT / 100;
+            let yBase = AREA_HEIGHT + AREA_MARGINS.TOP;
 
             // prepare prev values
             let prevSongs = getSongsByYear(mMinYear - 1);
             let prevData = {};
 
+            // generate keys
             for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
                 prevData[ GENRE_CATEGORY[ i ] ] = 0;
             }
 
+            // get counts per key(genre)
             for (let i = 0 ; i < prevSongs.length ; i++) {
                 for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
                     if (prevSongs[i].genre == GENRE_CATEGORY[j]) {
@@ -179,59 +114,73 @@
                 }
             }
 
-            /*
-            d3.select('#area').append('path').attr('class', 'k-pop')
-                        .attr('fill', getColorBySimpleGenre('k-pop'))
-                        .attr('stroke', getColorBySimpleGenre('k-pop'))
-                        .attr('d', 'M ' + 100 + ' ' + 100 + ' L ' + 200 + ' ' + 200);
-            */
-            /*
-            console.log("prevSongs.length : " + prevSongs.length);
-            console.log("prevData : ");
-            console.log(prevData);
-            */
+            // normalize and calculate height values
+            for (let i in prevData) {
+                prevData[i] = ((prevData[i] / prevSongs.length) * 100) * yUnit;
+            }
 
-            // year loop for lines
             for (let i = mMinYear ; i <= mMaxYear ; i++) {
+                // prepare cur values
                 let curSongs = getSongsByYear(i);
-                let curData  = {};
+                let curData = {};
+
+                // generate keys
                 for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
                     curData[ GENRE_CATEGORY[j] ] = 0;
                 }
 
-                // console.log(curData);
+                // get counts
                 for (let j = 0 ; j < curSongs.length ; j++) {
                     for (let k = 0 ; k < GENRE_CATEGORY.length ; k++) {
-                        if (curSongs[j].genre == GENRE_CATEGORY[ k ]) {
-                            curData[ GENRE_CATEGORY[ k ] ]++;
+                        if (curSongs[j].genre == GENRE_CATEGORY[k]) {
+                            curData[ GENRE_CATEGORY[k] ]++;
                         }
                     }
                 }
 
-                console.log("year : " + i + ", songs : " + curSongs.length);
-                console.log(curData);
-
-                /*
-                // lines
-                let accumulatedY = 0;
-                let prevX = AREA_MARGINS.LEFT + ((i - mMinYear) * xUnit);
-                let curX = prevX + xUnit;
+                // normalize and calculate height values
                 for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
-                    let curSimpleGenre = GENRE_CATEGORY[ j ];
-                    let prevY = (prevData[ curSimpleGenre ] / prevSongs.length) * 100; // percentage
-                    console.log("prevData[ curSimpleGenre ] : " + prevData[ curSimpleGenre ]);
-
-                    let curY = (curData[ curSimpleGenre ] / curSongs.length) * 100; // percentage
-                    console.log("curYear : " + i + " curGenre : " + curSimpleGenre + " prevX : "
-                            + prevX + " prevY : " + prevY + " curX : " + curX + " curY : " + curY);
-                    d3.select('#area').append('path').attr('class', curSimpleGenre)
-                            .attr('stroke', getColorBySimpleGenre(curSimpleGenre))
-                            .attr('fill', getColorBySimpleGenre(curSimpleGenre))
-                            .attr('d', 'M ' + prevX + ' ' + AREA_HEIGHT - (prevY * yUnit)
-                                    + ' L ' + curX + ' ' + AREA_HEIGHT - (curY * yUnit));
-                    accumulatedY += curY;
+                    let counts = curData[ GENRE_CATEGORY[j] ];
+                    curData[ GENRE_CATEGORY[j] ] = ((counts / curSongs.length) * 100) * yUnit;
                 }
-                */
+
+                let prevX = AREA_MARGINS.LEFT + 1/* for y axis line */ + (xUnit * (i - mMinYear));
+                let curX = prevX + xUnit;
+                let accPrevY = 0;
+                let accCurY = 0;
+                const areaTooltip = d3.select('body').append("div").style("position", "absolute")
+                        .style("z-index", "10").style("visibility", "hidden");
+                // line with fill from prev to cur
+                for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
+                    let curGenre = GENRE_CATEGORY[j];
+                    let curColor = getColorByGenre(curGenre);
+                    let dStr = 'M ' + prevX + ' ' + (yBase - accPrevY) +
+                            ' V ' + (yBase - accPrevY - (prevData[ curGenre ])) +
+                            ' L ' + curX + ' ' + (yBase - accCurY - (curData[ curGenre ])) +
+                            ' V ' + (yBase - accCurY);
+                    areaChartSvg.append('path').attr('class', curGenre).attr('fill', curColor)
+                            .attr('id', i).attr('stroke', curColor).attr('d', dStr)
+                            .on('mouseenter', function() {
+                                d3.select(this).attr('fill', d3.rgb(curColor).darker(2));
+                                return areaTooltip.style("visibility", "visible").text(i + ', ' + curGenre);
+                            }).on('mousemove', function() {
+                                return areaTooltip.style("top", (event.pageY - 10) + "px")
+                                        .style("left", ( event.pageX + 10 ) + "px")
+                                        .text(i + ', ' + curGenre);
+                            }).on('mouseleave', function() {
+                                d3.select(this).attr('fill', curColor);
+                                return areaTooltip.style("visibility", "hidden");
+                            }).on('click', function() {
+                                console.log('mouse click(year : ' + i + ', genre : ' + curGenre + ')');
+                                mSelectedYear = i;
+                                mSelectedGenre = curGenre;
+                                drawVasePlot();
+                            });
+                    accPrevY += prevData[ curGenre ];
+                    accCurY += curData[ curGenre ];
+                }
+                prevSongs = curSongs;
+                prevData = curData;
             }
         }
 
@@ -257,6 +206,6 @@
     </script>
     <body>
         <h1>Loading...</h1>
-        <svg id="area" width=500 height=500 style="border:black 1px solid"/>
+        <svg id="area" width=500 height=500 />
     </body>
 </html>
