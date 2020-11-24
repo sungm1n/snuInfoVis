@@ -3,6 +3,52 @@
         <meta Content-Type:text/html; charset="UTF-8">
         <title>SnuInfoVis Term Project - GPS</title>
     </head>
+    <style>
+        #tooltip-table {
+            position: absolute;
+            border: solid;
+            border-width: 2px;
+            border-radius: 4px 4px 4px 4px;
+            background-color: white;
+            padding: 5px;
+            text-align: left;
+            font-size: 11px;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            padding-bottom: 40px;
+        }
+        #tooltip-table-close-button {
+            float: right;
+            display: block;
+            width: 30px;
+            height: 30px;
+        }
+        #tooltip-table-title {
+            font-size: xx-large;
+            display: block;
+            text-align: center;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        #tooltip-table-div {
+            height: 90%;
+            overflow-y: scroll;
+        }
+        /* #tooltip-table-div::-webkit-scrollbar {
+            display: none;
+        } */
+        #tooltip-table-main {
+            font-size: x-large;
+            display: block;
+            margin: auto;
+            width: 90%;
+        }
+        .tooltip-table-main-row {
+            font-size: medium;
+        }
+    </style>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
 
@@ -52,7 +98,7 @@
             drawAreaChart();
             drawVasePlot();
             initdrawLineChart();
-            // drawTable();
+            drawTable();
         }
 
         // -------------------- UTIL apis --------------------
@@ -652,7 +698,7 @@
                 .on('click', function(event,d) {
                                 console.log('mouse click(popularity : ' + d.popularity );
                                 mSelectedPopularity = d.popularity;
-                                drawTable();
+                                showTable();
                             })
                             
 
@@ -671,14 +717,6 @@
 
             
 
-        }
-
-        function drawTable() {
-            console.log("in drawTable(), popularity is " + mSelectedPopularity.toString())
-            // TODO 남재호 draws or updates a song table filtered by mSelectedYear, mSelectedGenre,
-            //      mSelectedIndex, mSelectedPopularity
-            // TODO show more info for a song when mouse on
-            // TODO open selected song's spotify url.
         }
 
         function initdrawLineChart() {
@@ -771,12 +809,137 @@
                 .on('click', function(event,d) {
                                 console.log('mouse click(popularity : ' + d.popularity );
                                 mSelectedPopularity = d.popularity;
-                                drawTable();
+                                showTable();
                             })
           
             
 
         }
+
+        function drawTable() {
+            // define base elements of tooltip table
+
+            let div = d3.select("body").append("div")
+                .attr("id", "tooltip-table")
+                .style("visibility", "hidden");
+
+            let button = div.append("button")
+                .attr("id", "tooltip-table-close-button")
+                .text("x")
+                .on("click", closeTooltip);
+
+            let title = div.append("span").attr("id", "tooltip-table-title");
+            let divTable = div.append("div").attr("id", "tooltip-table-div");
+            let svg = divTable.append("svg").attr("id", "tooltip-table-main");
+        }
+
+        function showTable() {
+            let column_names = ["title", "artist", mSelectedIndex];
+            let column_toggles = [1, 1, 1];
+
+            // get filtered data
+            let tableMData = mData.filter(x => x.date.substring(0, 4) == mSelectedYear)
+                .filter(x => x.genre == mSelectedGenre)
+                .filter(x => x.popularity == mSelectedPopularity);
+
+            // define x, y scale of table
+            let xScaleStart = d3.scaleOrdinal().domain(column_names).range(["0%", "40%", "70%"]);
+            let xScaleMiddle  = d3.scaleOrdinal().domain(column_names).range(["20%", "55%", "85%"]);
+            let xWidth = d3.scaleOrdinal().domain(column_names).range(["40%", "30%", "30%"]);
+            let yScale = d3.scaleBand().domain(d3.range(0, tableMData.length + 1)).range([0, (tableMData.length + 1) * 50]);
+
+            // open tooltip table
+            openTooltip();
+
+            // set title of tooltip
+            let title = d3.select("span#tooltip-table-title");
+            title.text(mSelectedGenre + ", " + mSelectedYear + " (Popularity: " + mSelectedPopularity + "), "
+                + tableMData.length + " items");
+
+            // set height of table
+            let svg = d3.select("svg#tooltip-table-main")
+                .style("height", (tableMData.length + 1) * 50 + "px");
+
+            // set header of table
+            let headerItems = svg.append("g").attr("class", "tooltip-table-main-header")
+                .selectAll("text").data(column_names).enter().append("g");
+            headerItems.append("rect").attr("x", d => xScaleStart(d)).attr("y", "0px")
+                .attr("rx", "4px").attr("ry", "4px").attr("fill", "black")
+                .attr("width", d => xWidth(d)).attr("height", "50px")
+                .attr("stroke", "white").attr("stroke-width", "1px");
+            headerItems.append("text").attr("class", d => ("tooltip-table-main-header-" + d))
+                .text(d => (d.charAt(0).toUpperCase() + d.slice(1))).attr("fill", "white")
+                .attr("alignment-baseline", "middle").attr("text-anchor", "middle")
+                .attr("x", d => xScaleMiddle(d)).attr("y", yScale(0) + 25 + "px")
+                .on("mouseenter", function() {
+                    d3.select(this).style("text-decoration", "underline");
+                })
+                .on("mouseleave", function() {
+                    d3.select(this).style("text-decoration", "none");
+                })
+                .on("click", function(e, d) {
+                    let toggle = column_toggles[column_names.indexOf(d)];
+                    let newTableMData = tableMData.sort((a, b) => toggle * a[d].localeCompare(b[d]));
+                    column_toggles[column_names.indexOf(d)] = -toggle;
+                    d3.select("g.tooltip-table-main-rows").selectAll("g.tooltip-table-main-row").data(newTableMData).each(function (row) {
+                        d3.select(this).selectAll("g").data(column_names).each(function (column_name) {
+                            d3.select(this).select("text").text(row[column_name]);
+                        })
+                    })
+                    addLinkToTitle();
+                })
+
+            // set contents of table
+            let rows = svg.append("g").attr("class", "tooltip-table-main-rows")
+                .selectAll("g").data(tableMData).enter()
+                .append("g").attr("class", "tooltip-table-main-row").each(function (row, i) {
+                    let rowItems = d3.select(this).selectAll("text").data(column_names).enter().append("g");
+                    rowItems.append("rect").attr("x", d => xScaleStart(d)).attr("y", yScale(i + 1) + "px")
+                        .attr("rx", "4px").attr("ry", "4px").attr("fill", "#dddddd")
+                        .attr("width", d => xWidth(d)).attr("height", "50px")
+                        .attr("stroke", "white").attr("stroke-width", "1px");
+                    rowItems.append("text").attr("class", d => ("tooltip-table-main-row-" + d)).text(d => row[d])
+                        .attr("alignment-baseline", "middle")
+                        .attr("x", d => xScaleStart(d).replace("0", "2")).attr("y", yScale(i + 1) + 25 + "px");
+                });
+            addLinkToTitle();
+        }
+
+        function openTooltip() {
+            // remove all table contents
+            d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-header").remove();
+            d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-rows").remove();
+
+            // open
+            d3.select("div#tooltip-table").style("visibility", "visible");
+        }
+
+        function closeTooltip() {
+            // close
+            d3.select("div#tooltip-table").style("visibility", "hidden");
+
+            // remove all table contents
+            d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-header").remove();
+            d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-rows").remove();
+        }
+
+        function addLinkToTitle() {
+            // open new window of songdata.io when title is clicked 
+            d3.selectAll("g.tooltip-table-main-row").each(function (row) {
+                let url = "https://songdata.io/track/" + row["id"];
+                d3.select(this).select("text.tooltip-table-main-row-title")
+                    .on("mouseenter", function() {
+                        d3.select(this).style("text-decoration", "underline").style("cursor", "pointer");
+                    })
+                    .on("mouseleave", function() {
+                        d3.select(this).style("text-decoration", "none").style("cursor", "default");
+                    })
+                    .on("click", function() {
+                        window.open(url, "new", "top=100, left=100, width=800, height=600", "_blank");
+                    });
+            });
+        }
+
     </script>
     <body>
         <h1>Loading...</h1>
