@@ -7,9 +7,11 @@
     <script>
 
         let SVG_AREA_WIDTH = 500;
+        let SVG_AREA_WIDTH_LINE = 1000;
         let SVG_AREA_HEIGHT = 500;
         let AREA_MARGINS = {TOP:20, RIGHT:20, BOTTOM:30, LEFT:40};
         let AREA_WIDTH = SVG_AREA_WIDTH - AREA_MARGINS.LEFT - AREA_MARGINS.RIGHT;
+        let AREA_WIDTH_LINE = SVG_AREA_WIDTH_LINE - AREA_MARGINS.LEFT - AREA_MARGINS.RIGHT;
         let AREA_HEIGHT = SVG_AREA_HEIGHT - AREA_MARGINS.TOP - AREA_MARGINS.BOTTOM;
         let GENRE_CATEGORY = ['k-pop', 'hiphop', 'classic', 'rock', 'r&b', 'jazz', 'country', 'pop']
 
@@ -17,10 +19,19 @@
         let mMinYear = 1970; // fixed
         let mMaxYear = 0;
 
-        let mSelectedYear = 2010;
-        let mSelectedGenre = GENRE_CATEGORY[0];
+        let mSelectedYear = 1987;
+        let mSelectedGenre = GENRE_CATEGORY[3];
         let mSelectedIndex = "danceability";
         let mSelectedPopularity = 72;
+
+
+        let initVasePlot =1;
+
+        let linetototo;
+        let lineX;
+        let lineY;
+        let lineXAxis;
+        let lineYAxis;
 
         d3.json("data.json").then(function(data) {
             mData = data;
@@ -40,8 +51,8 @@
 
             drawAreaChart();
             drawVasePlot();
-            drawLineChart();
-            drawTable();
+            initdrawLineChart();
+            // drawTable();
         }
 
         // -------------------- UTIL apis --------------------
@@ -75,6 +86,79 @@
                 }
             }
         }
+
+        function getLineData(mSelectedYear,mSelectedGenre)
+        {
+            // console.log("getLineData in");
+
+            // console.log(mData);
+
+            let newData;
+            let newData2 = [];
+            let newData3 = [];
+
+            newData = getSongsByYear(mSelectedYear);
+
+            for (let i=0; i< newData.length; i++){
+                if(newData[i].genre==mSelectedGenre)
+                {
+                    newData2.push(newData[i]);
+                }
+            }
+
+            return newData2;
+
+        }
+
+        function getLineDataIndex(linedata,mSelectedIndex)
+        {
+            // console.log("getLineDataIndex in");
+
+            // console.log(linedata);
+
+            let ret=[];
+            
+            let minpop = d3.min(linedata,d=>d.popularity);
+            let maxpop = d3.max(linedata,d=>d.popularity);
+
+            // console.log(minpop);
+            // console.log(maxpop);
+
+            for(let i=minpop; i<=maxpop; i++)
+            {
+                let temp=[];
+                let mean=0.0;
+                for(let j=0; j<linedata.length;j++)
+                {
+                    if(linedata[j].popularity==i)
+                    {
+                    
+                        temp.push(linedata[j]);
+                    }
+                }
+
+                for(let k=0;k<temp.length;k++)
+                {
+                    mean= mean+parseFloat(temp[k][mSelectedIndex]);
+                    // console.log("i is "+ i.toString())
+                    // console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+                    // console.log(mean);
+                }
+                if(temp.length>0)
+                {
+                    ret.push({"id":mSelectedYear+mSelectedGenre+mSelectedIndex+i.toString(),"popularity":parseInt(i),"mean":mean/temp.length});
+                }
+
+            
+                
+            }
+
+            // console.log(ret);
+
+            return ret;
+
+        }
+
 
         // -------------------- DRAWING APIs --------------------
         function drawAreaChart() {
@@ -185,27 +269,520 @@
         }
 
         function drawVasePlot() {
-            // TODO 조남우 draws or updates a chart considering mSelectedYear, mSelectedGenre.
-            // TODO update mSelectedIndex as user selection.
-            // TODO call drawLineChart().
+            d3.selectAll("rect").remove()
+            d3.selectAll("line").remove()
+
+
+            // prepare values
+            let prevSongs = getSongsByYear(mSelectedYear);
+            //prepare attributes
+            let valence = []
+            let energy = []
+            let acousticness = []
+            let danceability = []
+            
+            function getNormalized(array) {
+                let min = Math.min(...array),
+                    max = Math.max(...array);
+                 return array.map(v => (v - min) / (max - min));
+            }
+            
+            
+            let temp = []
+
+
+            for (let i = 0 ; i < prevSongs.length ; i++) {
+                if (prevSongs[i].genre == mSelectedGenre) {
+                    console.log(mSelectedGenre)
+                    valence.push(prevSongs[i].valence)
+                    energy.push(prevSongs[i].energy)
+                    acousticness.push(prevSongs[i].acousticness)
+                    danceability.push(prevSongs[i].danceability)
+                    temp.push(prevSongs[i].tempo)
+                    }
+                }
+            let tempo = getNormalized(temp)
+           
+           
+            //console.log(valence)
+            //console.log(energy)
+            //console.log(acousticness)
+            //console.log(danceability)
+            //console.log((tempo))
+
+            
+            //valence
+            let sorted_valence = valence.sort(d3.ascending)
+            let v_q1 = d3.quantile(sorted_valence, .25)
+            let v_median = d3.quantile(sorted_valence, .5)
+            let v_q3 = d3.quantile(sorted_valence, .75)
+            let v_interQuantileRange = v_q3 - v_q1
+            let v_min = v_q1 - 1.5 * v_interQuantileRange
+            let v_max = v_q1 + 1.5 * v_interQuantileRange
+
+            //energy
+            let sorted_energy = energy.sort(d3.ascending)
+            let e_q1 = d3.quantile(sorted_energy, .25)
+            let e_median = d3.quantile(sorted_energy, .5)
+            let e_q3 = d3.quantile(sorted_energy, .75)
+            let e_interQuantileRange = e_q3 - e_q1
+            let e_min = e_q1 - 1.5 * e_interQuantileRange
+            let e_max = e_q1 + 1.5 * e_interQuantileRange
+    
+            //acousticness
+            let sorted_acousticness = acousticness.sort(d3.ascending)
+            let a_q1 = d3.quantile(sorted_acousticness, .25)
+            let a_median = d3.quantile(sorted_acousticness, .5)
+            let a_q3 = d3.quantile(sorted_acousticness, .75)
+            let a_interQuantileRange = a_q3 - a_q1
+            let a_min = a_q1 - 1.5 * a_interQuantileRange
+            let a_max = a_q1 + 1.5 * a_interQuantileRange
+
+            //danceability
+            let sorted_danceability = danceability.sort(d3.ascending)
+            let d_q1 = d3.quantile(sorted_danceability, .25)
+            let d_median = d3.quantile(sorted_danceability, .5)
+            let d_q3 = d3.quantile(sorted_danceability, .75)
+            let d_interQuantileRange = d_q3 - d_q1
+            let d_min = d_q1 - 1.5 * d_interQuantileRange
+            let d_max = d_q1 + 1.5 * d_interQuantileRange
+                              
+            //tempo
+            let sorted_tempo = tempo.sort(d3.ascending)
+            let t_q1 = d3.quantile(sorted_tempo, .25)
+            let t_median = d3.quantile(sorted_tempo, .5)
+            let t_q3 = d3.quantile(sorted_tempo, .75)
+            let t_interQuantileRange = t_q3 - t_q1
+            let t_min = t_q1 - 1.5 * t_interQuantileRange
+            let t_max = t_q1 + 1.5 * t_interQuantileRange
+
+
+            // set the dimensions and margins of the graph
+            var margin = {top: 20, right: 20, bottom: 30, left: 40},
+                 width = 500 - margin.left - margin.right,
+                 height = 500 - margin.top - margin.bottom;
+
+            // append the svg object to the body of the page
+            let svg = d3.select("#vase")
+                        .append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform",
+                           "translate(" + margin.left + "," + margin.top + ")");
+            // Show the X scale
+            let x = d3.scaleBand()
+                    .range([ 0, width ])
+                    .domain(["valence", "energy", "acousticness","danceability","tempo"])
+                    .paddingInner(1)
+                    .paddingOuter(.5)
+                 svg.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x))
+
+            // Show the Y scale
+            let y = d3.scaleLinear()
+                    .domain([0,1])
+                    .range([height, 0])
+                 svg.append("g").call(d3.axisLeft(y))
+
+        //valence  
+            var v_center = 40
+            var v_width = 50
+            // Show the vertical line
+            svg
+            .append("line")
+              .attr("x1", v_center)
+              .attr("x2", v_center)
+              .attr("y1", y(v_min) )
+              .attr("y2", y(v_max) )
+              .attr("stroke", "black")
+            // Show the box
+            svg
+            .append("rect")
+              .attr("x", v_center - v_width/2)
+              .attr("y", y(v_q3) )
+              .attr("height", (y(v_q1)-y(v_q3)) )
+              .attr("width", v_width )
+              .attr("stroke", "black")
+              .style("fill", "#ff89da")
+            // show median, min and max horizontal lines
+            svg
+            .selectAll("toto")
+            .data([v_min, v_median, v_max])
+            .enter()
+            .append("line")
+              .attr("x1", v_center-v_width/2)
+              .attr("x2", v_center+v_width/2)
+              .attr("y1", function(d){ return(y(d))} )
+              .attr("y2", function(d){ return(y(d))} )
+              .attr("stroke", "black")
+
+        //energy  
+        var e_center = 130
+            var e_width = 50
+            // Show the vertical line
+            svg
+            .append("line")
+              .attr("x1", e_center)
+              .attr("x2", e_center)
+              .attr("y1", y(e_min) )
+              .attr("y2", y(e_max) )
+              .attr("stroke", "black")
+            // Show the box
+            svg
+            .append("rect")
+              .attr("x", e_center - e_width/2)
+              .attr("y", y(e_q3) )
+              .attr("height", (y(e_q1)-y(e_q3)) )
+              .attr("width", e_width )
+              .attr("stroke", "black")
+              .style("fill", "#00d073")
+            // show median, min and max horizontal lines
+            svg
+            .selectAll("toto")
+            .data([e_min, e_median, e_max])
+            .enter()
+            .append("line")
+              .attr("x1", e_center-e_width/2)
+              .attr("x2", e_center+e_width/2)
+              .attr("y1", function(d){ return(y(d))} )
+              .attr("y2", function(d){ return(y(d))} )
+              .attr("stroke", "black")
+
+        //acousticness  
+        var a_center = 220
+        var a_width = 50
+            // Show the vertical line
+            svg
+            .append("line")
+              .attr("x1", a_center)
+              .attr("x2", a_center)
+              .attr("y1", y(a_min) )
+              .attr("y2", y(a_max) )
+              .attr("stroke", "black")
+            // Show the box
+            svg
+            .append("rect")
+              .attr("x", a_center - a_width/2)
+              .attr("y", y(a_q3) )
+              .attr("height", (y(a_q1)-y(a_q3)) )
+              .attr("width", a_width )
+              .attr("stroke", "black")
+              .style("fill", "#ffe587")
+            // show median, min and max horizontal lines
+            svg
+            .selectAll("toto")
+            .data([a_min, a_median, a_max])
+            .enter()
+            .append("line")
+              .attr("x1", a_center-a_width/2)
+              .attr("x2", a_center+a_width/2)
+              .attr("y1", function(d){ return(y(d))} )
+              .attr("y2", function(d){ return(y(d))} )
+              .attr("stroke", "black")
+
+        //danceability  
+        var d_center = 310
+            var d_width = 50
+            // Show the vertical line
+            svg
+            .append("line")
+              .attr("x1", d_center)
+              .attr("x2", d_center)
+              .attr("y1", y(d_min) )
+              .attr("y2", y(d_max) )
+              .attr("stroke", "black")
+            // Show the box
+            svg
+            .append("rect")
+              .attr("x", d_center - d_width/2)
+              .attr("y", y(d_q3) )
+              .attr("height", (y(d_q1)-y(d_q3)) )
+              .attr("width", d_width )
+              .attr("stroke", "black")
+              .style("fill", "#ff7972")
+            // show median, min and max horizontal lines
+            svg
+            .selectAll("toto")
+            .data([d_min, d_median, d_max])
+            .enter()
+            .append("line")
+              .attr("x1", d_center-d_width/2)
+              .attr("x2", d_center+d_width/2)
+              .attr("y1", function(d){ return(y(d))} )
+              .attr("y2", function(d){ return(y(d))} )
+              .attr("stroke", "black")
+
+        //tempo  
+        var t_center = 400
+            var t_width = 50
+            // Show the vertical line
+            svg
+            .append("line")
+              .attr("x1", t_center)
+              .attr("x2", t_center)
+              .attr("y1", y(t_min) )
+              .attr("y2", y(t_max) )
+              .attr("stroke", "black")
+            // Show the box
+            svg
+            .append("rect")
+              .attr("x", t_center - t_width/2)
+              .attr("y", y(t_q3) )
+              .attr("height", (y(t_q1)-y(t_q3)) )
+              .attr("width", t_width )
+              .attr("stroke", "black")
+              .style("fill", "#4259ff")
+            // show median, min and max horizontal lines
+            svg
+            .selectAll("toto")
+            .data([t_min, t_median, t_max])
+            .enter()
+            .append("line")
+              .attr("x1", t_center-t_width/2)
+              .attr("x2", t_center+t_width/2)
+              .attr("y1", function(d){ return(y(d))} )
+              .attr("y2", function(d){ return(y(d))} )
+              .attr("stroke", "black")
+
+
+            if(initVasePlot==0){
+              drawLineChart()
+            }
+            else{
+                initVasePlot=0;
+            }
         }
 
         function drawLineChart() {
-            // TODO 석상윤 draws or updates a chart considering mSelectedYear, mSelectedGenre, mSelectedIndex
-            // TODO update mSelectedPopularity as user selection.
-            // TODO call drawTable().
+            
+            // console.log("drawLineChart in in in ")
+
+            let linedata = getLineData(mSelectedYear,mSelectedGenre)
+
+            let lineChartSvg = d3.select('#line');
+
+            // // axis
+            // let lineX = d3.scaleLinear().domain([d3.min(linedata,d=>d.popularity),d3.max(linedata,d=>d.popularity)])
+            //         .range([0, AREA_WIDTH_LINE]);
+            // let lineXAxis = d3.axisBottom(lineX);
+            // //.tickFormat(d3.format("d"));
+
+            // lineChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT,
+            //         AREA_HEIGHT + AREA_MARGINS.TOP)).call(lineXAxis);
+
+            // let lineY = d3.scaleLinear().domain([1, 0]).range([0, AREA_HEIGHT]);
+            // let lineYAxis = d3.axisLeft(lineY);
+            // lineChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
+            //         .call(lineYAxis);
+
+
+            mSelectedIndex = "danceability";
+            linedata = getLineDataIndex(linedata,mSelectedIndex);
+
+            let linedata2 = [];
+            linedata2.push(linedata);
+
+            const areaTooltip = d3.select('body').append("div").style("position", "absolute")
+                        .style("z-index", "10").style("visibility", "hidden");
+
+
+            // linetototo = d3.line()
+            //                 .x(function(d){console.log("kkkkkkkkkkk");return lineX(d.popularity)})
+            //                 .y(function(d){return lineY(d.mean)});
+
+            // linetototo()
+
+            lineX.domain([d3.min(linedata,d=>d.popularity),d3.max(linedata,d=>d.popularity)]);
+
+            lineChartSvg.selectAll('.lineXAxis').call(lineXAxis);
+
+            lineChartSvg
+            .selectAll('.line_path')
+            .data(linedata2,d=>d.id)
+            .join(
+                enter=>enter
+                .append('path')
+                .attr('class','line_path')
+                .attr('d',function(d){return linetototo(d);})
+                .attr('fill','none')
+                .attr('stroke','black')
+                ,
+
+                update=>update
+                .attr('d',function(d){return linetototo(d);})
+
+                ,
+
+                exit=>exit
+                .remove()
+
+            )
+
+
+            lineChartSvg
+            .selectAll('circle')
+            
+            .data(linedata,d=>d.id)
+            .join(
+                enter=>enter
+                .append('circle')
+                .attr('r',6.5)
+                .attr('fill','red')
+                .attr('id',d=>d.popularity)
+                .attr('cx',d=>lineX(d.popularity))
+                .attr('cy',d=>lineY(d.mean))
+                .attr('transform',translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
+                .on('mouseenter', function(event,d) {
+                    // console.log("#$@#$%@#$%!@#$!@$!@$#!@$!$@")
+                    // console.log(d)
+                                d3.select(this).attr('fill', d3.rgb('red').darker(2));
+                                return areaTooltip.style("visibility", "visible").text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
+                            })
+                .on('mousemove', function(event,d) {
+                                return areaTooltip.style("top", (event.pageY - 10) + "px")
+                                        .style("left", ( event.pageX + 10 ) + "px")
+                                        .text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
+                            })
+                .on('mouseleave', function(event,d) {
+                                d3.select(this).attr('fill', "red");
+                                return areaTooltip.style("visibility", "hidden");
+                            })
+                .on('click', function(event,d) {
+                                console.log('mouse click(popularity : ' + d.popularity );
+                                mSelectedPopularity = d.popularity;
+                                drawTable();
+                            })
+                            
+
+                ,
+
+                update => update
+                .attr('cx',d=>lineX(d.popularity))
+                .attr('cy',d=>lineY(d.mean))
+                ,
+                exit=>exit
+                .remove()
+
+
+            )
+
+
+            
+
         }
 
         function drawTable() {
+            console.log("in drawTable(), popularity is " + mSelectedPopularity.toString())
             // TODO 남재호 draws or updates a song table filtered by mSelectedYear, mSelectedGenre,
             //      mSelectedIndex, mSelectedPopularity
             // TODO show more info for a song when mouse on
             // TODO open selected song's spotify url.
         }
 
+        function initdrawLineChart() {
+
+            // console.log(mSelectedYear)
+            // console.log(mSelectedGenre)
+
+            let linedata = getLineData(mSelectedYear,mSelectedGenre)
+
+            
+            // console.log(linedata);
+
+            let lineChartSvg = d3.select('#line');
+
+            // axis
+            lineX = d3.scaleLinear().domain([d3.min(linedata,d=>d.popularity),d3.max(linedata,d=>d.popularity)])
+                    .range([0, AREA_WIDTH_LINE]);
+            lineXAxis = d3.axisBottom(lineX);
+            //.tickFormat(d3.format("d"));
+
+            lineChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT,
+                    AREA_HEIGHT + AREA_MARGINS.TOP)).attr('class','lineXAxis').call(lineXAxis);
+
+            lineY = d3.scaleLinear().domain([1, 0]).range([0, AREA_HEIGHT]);
+            lineYAxis = d3.axisLeft(lineY);
+            lineChartSvg.append("g").attr('transform', translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
+                    .call(lineYAxis);
+
+
+            mSelectedIndex = "danceability";
+            linedata = getLineDataIndex(linedata,mSelectedIndex);
+
+            let linedata2 = [];
+            linedata2.push(linedata);
+
+            const areaTooltip = d3.select('body').append("div").style("position", "absolute")
+                        .style("z-index", "10").style("visibility", "hidden");
+
+
+            linetototo = d3.line()
+                            .x(function(d){return lineX(d.popularity)})
+                            .y(function(d){return lineY(d.mean)});
+
+            // linetototo()
+
+            lineChartSvg
+            .append('g')
+            .attr('transform',translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
+            .selectAll('.line_path')
+            .data(linedata2,d=>d.id)
+
+            .enter()
+                
+                .append('path')
+                .attr('class','line_path')
+                .attr('d',function(d){return linetototo(d);})
+                .attr('fill','none')
+                .attr('stroke','black')
+                 
+
+
+
+            lineChartSvg
+            .append('g')
+            .attr('transform',translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
+            .selectAll('circle')
+            .data(linedata,d=>d.id)
+            .enter()
+                .append('circle')
+                .attr('r',6.5)
+                .attr('fill','red')
+                .attr('id',d=>d.popularity)
+                .attr('cx',d=>lineX(d.popularity))
+                .attr('cy',d=>lineY(d.mean))
+                .on('mouseenter', function(event,d) {
+                    // console.log("#$@#$%@#$%!@#$!@$!@$#!@$!$@")
+                    // console.log(d)
+                                d3.select(this).attr('fill', d3.rgb('red').darker(2));
+                                return areaTooltip.style("visibility", "visible").text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
+                            })
+                .on('mousemove', function(event,d) {
+                                return areaTooltip.style("top", (event.pageY - 10) + "px")
+                                        .style("left", ( event.pageX + 10 ) + "px")
+                                        .text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
+                            })
+                .on('mouseleave', function(event,d) {
+                                d3.select(this).attr('fill', "red");
+                                return areaTooltip.style("visibility", "hidden");
+                            })
+                .on('click', function(event,d) {
+                                console.log('mouse click(popularity : ' + d.popularity );
+                                mSelectedPopularity = d.popularity;
+                                drawTable();
+                            })
+          
+            
+
+        }
     </script>
     <body>
         <h1>Loading...</h1>
         <svg id="area" width=500 height=500 />
+        <svg id="vase" width=500 height=500 />
+    
+        <svg id="line" width=1000 height=500 />
     </body>
 </html>
