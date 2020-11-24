@@ -293,9 +293,11 @@
                             ' L ' + curX + ' ' + (yBase - accCurY - (curData[ curGenre ])) +
                             ' V ' + (yBase - accCurY);
                     areaChartSvg.append('path').attr('class', curGenre).attr('fill', curColor)
-                            .attr('id', i).attr('stroke', curColor).attr('d', dStr)
+                            .attr('id', 'path_' + j).attr('stroke', curColor).attr('d', dStr).style('opacity', 0)
                             .on('mouseenter', function() {
-                                d3.select(this).attr('fill', d3.rgb(curColor).darker(1));
+                                if (d3.select(this).attr('id') !=  'selected') {
+                                    d3.select(this).attr('fill', d3.rgb(curColor).darker(1));
+                                }
                                 return areaTooltip.style("visibility", "visible").text(i + ', ' + curGenre);
                             }).on('mousemove', function() {
                                 return areaTooltip.style("top", (event.pageY - 10) + "px")
@@ -326,12 +328,19 @@
                             });
                     let border = 'M '  + prevX + ' ' + (yBase - accPrevY - (prevData[ curGenre ])) +
                                  ' L ' + curX + ' ' + (yBase - accCurY - (curData[ curGenre ]));
-                    areaChartSvg.append('path').attr('stroke', d3.rgb(curColor).darker(2)).attr('d', border);
+                    areaChartSvg.append('path').attr('id', 'path_' + j).style('opacity', 0)
+                            .attr('stroke', d3.rgb(curColor).darker(2)).attr('d', border);
                     accPrevY += prevData[ curGenre ];
                     accCurY += curData[ curGenre ];
                 }
                 prevSongs = curSongs;
                 prevData = curData;
+            }
+
+            // animation
+            for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
+                d3.selectAll('#path_' + i).transition().delay((i * 500)).duration(500)
+                        .style('opacity', 1);
             }
         }
 
