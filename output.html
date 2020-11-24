@@ -1,7 +1,7 @@
 <html>
     <head>
         <meta Content-Type:text/html; charset="UTF-8">
-        <title>SnuInfoVis Term Project - GPS</title>
+        <title>SnuInfoVis Team Project</title>
     </head>
     <style>
         #tooltip-table {
@@ -69,7 +69,9 @@
         let mSelectedGenre = GENRE_CATEGORY[3];
         let mSelectedIndex = "danceability";
         let mSelectedPopularity = 72;
-
+        let mAreaSelected;
+        let mAreaColorToRestore;
+        let mAreaTooltipFixed;
 
         let initVasePlot =1;
 
@@ -86,7 +88,7 @@
 
         function init() {
             console.log("mData size : " + mData.length);
-            d3.select("h1").text("Hello!");
+            d3.select("h1").text("GPS, Guide to Popular Song");
 
             // update year range from data.
             for (let i = 0 ; i < mData.length ; i++) {
@@ -279,7 +281,9 @@
                 let accPrevY = 0;
                 let accCurY = 0;
                 const areaTooltip = d3.select('body').append("div").style("position", "absolute")
-                        .style("z-index", "10").style("visibility", "hidden");
+                        .style("visibility", "hidden").style("color", "gray");
+                mAreaTooltipFixed = d3.select('body').append("div").style("position", "absolute")
+                        .style("visibility", "hidden");
                 // line with fill from prev to cur
                 for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
                     let curGenre = GENRE_CATEGORY[j];
@@ -291,21 +295,38 @@
                     areaChartSvg.append('path').attr('class', curGenre).attr('fill', curColor)
                             .attr('id', i).attr('stroke', curColor).attr('d', dStr)
                             .on('mouseenter', function() {
-                                d3.select(this).attr('fill', d3.rgb(curColor).darker(2));
+                                d3.select(this).attr('fill', d3.rgb(curColor).darker(1));
                                 return areaTooltip.style("visibility", "visible").text(i + ', ' + curGenre);
                             }).on('mousemove', function() {
                                 return areaTooltip.style("top", (event.pageY - 10) + "px")
                                         .style("left", ( event.pageX + 10 ) + "px")
                                         .text(i + ', ' + curGenre);
                             }).on('mouseleave', function() {
-                                d3.select(this).attr('fill', curColor);
+                                if (d3.select(this).attr('id') != 'selected') {
+                                    d3.select(this).attr('fill', curColor);
+                                }
                                 return areaTooltip.style("visibility", "hidden");
                             }).on('click', function() {
                                 console.log('mouse click(year : ' + i + ', genre : ' + curGenre + ')');
                                 mSelectedYear = i;
                                 mSelectedGenre = curGenre;
+                                if (typeof(mAreaSelected) != 'undefined') {
+                                    mAreaSelected.attr('fill', mAreaColorToRestore);
+                                    mAreaSelected.attr('id', '');
+                                }
+                                d3.select(this).attr('id', 'selected');
+                                mAreaColorToRestore = curColor;
+                                mAreaSelected = d3.select(this);
                                 drawVasePlot();
+                                d3.select(this).attr('fill', d3.rgb(curColor).darker(2));
+
+                                return mAreaTooltipFixed.style("top", (event.pageY - 10) + "px")
+                                        .style("left", ( event.pageX + 10 ) + "px")
+                                        .style("visibility", "visible").text(i + ', ' + curGenre);
                             });
+                    let border = 'M '  + prevX + ' ' + (yBase - accPrevY - (prevData[ curGenre ])) +
+                                 ' L ' + curX + ' ' + (yBase - accCurY - (curData[ curGenre ]));
+                    areaChartSvg.append('path').attr('stroke', d3.rgb(curColor).darker(2)).attr('d', border);
                     accPrevY += prevData[ curGenre ];
                     accCurY += curData[ curGenre ];
                 }
