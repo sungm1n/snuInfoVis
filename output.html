@@ -164,6 +164,64 @@
 
             // console.log(linedata);
 
+            if(mSelectedIndex=="tempo")
+            {
+                let ret=[];
+            
+                let minpop = d3.min(linedata,d=>d.popularity);
+                let maxpop = d3.max(linedata,d=>d.popularity);
+
+                console.log(minpop);
+                console.log(maxpop);
+
+                linedata.forEach(function(d){
+                    d.tempo = parseFloat(d.tempo);
+                })
+
+                let minn= d3.min(linedata,d=>d.tempo);
+                let maxx = d3.max(linedata,d=>d.tempo);
+                console.log(linedata);
+
+                console.log(minn);
+                console.log(maxx);
+
+                for(let i=minpop; i<=maxpop; i++)
+                {
+                    let temp=[];
+                    let mean=0.0;
+                    for(let j=0; j<linedata.length;j++)
+                    {
+                        if(linedata[j].popularity==i)
+                        {
+                        
+                            temp.push(linedata[j]);
+                        }
+                    }
+
+                    
+
+                    for(let k=0;k<temp.length;k++)
+                    {
+                        mean= (mean+parseFloat(temp[k][mSelectedIndex])-minn)/maxx;
+
+                    }
+                    if(temp.length>0)
+                    {
+                        ret.push({"id":mSelectedYear+mSelectedGenre+mSelectedIndex+i.toString(),"popularity":parseInt(i),"mean":mean/temp.length});
+                    }
+
+                
+                    
+                }
+
+            // console.log(ret);
+
+            return ret;
+
+            }
+            else
+            {
+
             let ret=[];
             
             let minpop = d3.min(linedata,d=>d.popularity);
@@ -205,8 +263,22 @@
 
             return ret;
 
+            }
+
         }
 
+        function findColorofIndex(){
+            if( mSelectedIndex == "valence")
+                return "#ff89da";
+            if(mSelectedIndex=="energy")
+                return "#00d073";
+            if(mSelectedIndex=="acousticness")
+                return "#ffe587";
+            if(mSelectedIndex=="danceability")
+                return "#ff7972";
+            if(mSelectedIndex=="tempo")
+                return "#4259ff";
+        }
 
         // -------------------- DRAWING APIs --------------------
         function drawAreaChart() {
@@ -639,6 +711,8 @@
 
             let lineChartSvg = d3.select('#line');
 
+            const t_line = lineChartSvg.transition().duration(1200);
+
             // // axis
             // let lineX = d3.scaleLinear().domain([d3.min(linedata,d=>d.popularity),d3.max(linedata,d=>d.popularity)])
             //         .range([0, AREA_WIDTH_LINE]);
@@ -654,8 +728,10 @@
             //         .call(lineYAxis);
 
 
-            mSelectedIndex = "danceability";
+            // mSelectedIndex = "danceability";
             linedata = getLineDataIndex(linedata,mSelectedIndex);
+
+            // console.log(linedata);
 
             let linedata2 = [];
             linedata2.push(linedata);
@@ -672,7 +748,7 @@
 
             lineX.domain([d3.min(linedata,d=>d.popularity),d3.max(linedata,d=>d.popularity)]);
 
-            lineChartSvg.selectAll('.lineXAxis').call(lineXAxis);
+            lineChartSvg.selectAll('.lineXAxis').transition().duration(1200).call(lineXAxis);
 
             lineChartSvg
             .selectAll('.line_path')
@@ -684,10 +760,16 @@
                 .attr('d',function(d){return linetototo(d);})
                 .attr('fill','none')
                 .attr('stroke','black')
+                // .attr('opacity',0)
                 ,
 
                 update=>update
                 .attr('d',function(d){return linetototo(d);})
+                .attr('opacity',0)
+                .call(update=>update.transition(t_line)
+                
+                .attr('opacity',1)
+                )
 
                 ,
 
@@ -705,15 +787,16 @@
                 enter=>enter
                 .append('circle')
                 .attr('r',6.5)
-                .attr('fill','red')
+                .attr('fill',findColorofIndex())
                 .attr('id',d=>d.popularity)
                 .attr('cx',d=>lineX(d.popularity))
                 .attr('cy',d=>lineY(d.mean))
+                .attr('opacity',0)
                 .attr('transform',translate(AREA_MARGINS.LEFT, AREA_MARGINS.TOP))
                 .on('mouseenter', function(event,d) {
                     // console.log("#$@#$%@#$%!@#$!@$!@$#!@$!$@")
                     // console.log(d)
-                                d3.select(this).attr('fill', d3.rgb('red').darker(2));
+                                d3.select(this).attr('fill', d3.rgb(findColorofIndex()).darker(2)).attr('r',10);
                                 return areaTooltip.style("visibility", "visible").text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
                             })
                 .on('mousemove', function(event,d) {
@@ -722,7 +805,7 @@
                                         .text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
                             })
                 .on('mouseleave', function(event,d) {
-                                d3.select(this).attr('fill', "red");
+                                d3.select(this).attr('fill', findColorofIndex()).attr('r',6.5);
                                 return areaTooltip.style("visibility", "hidden");
                             })
                 .on('click', function(event,d) {
@@ -731,12 +814,15 @@
                                 showTable();
                             })
                             
-
+                .call(update=>update.transition(t_line).delay(1200).attr('opacity',1))
                 ,
 
                 update => update
+                .call(update=>update.transition(t_line).delay(1200)
+                .attr('opacity',1)
                 .attr('cx',d=>lineX(d.popularity))
                 .attr('cy',d=>lineY(d.mean))
+                )
                 ,
                 exit=>exit
                 .remove()
@@ -776,7 +862,7 @@
                     .call(lineYAxis);
 
 
-            mSelectedIndex = "danceability";
+            // mSelectedIndex = "danceability";
             linedata = getLineDataIndex(linedata,mSelectedIndex);
 
             let linedata2 = [];
@@ -805,8 +891,9 @@
                 .attr('d',function(d){return linetototo(d);})
                 .attr('fill','none')
                 .attr('stroke','black')
+                .attr('opacity',0)
                  
-
+            .transition().duration(1200).attr('opacity',1)
 
 
             lineChartSvg
@@ -817,14 +904,15 @@
             .enter()
                 .append('circle')
                 .attr('r',6.5)
-                .attr('fill','red')
+                .attr('fill',findColorofIndex())
                 .attr('id',d=>d.popularity)
                 .attr('cx',d=>lineX(d.popularity))
                 .attr('cy',d=>lineY(d.mean))
+                .attr('opacity',0)
                 .on('mouseenter', function(event,d) {
                     // console.log("#$@#$%@#$%!@#$!@$!@$#!@$!$@")
                     // console.log(d)
-                                d3.select(this).attr('fill', d3.rgb('red').darker(2));
+                                d3.select(this).attr('fill', d3.rgb(findColorofIndex()).darker(2)).attr('r',10);
                                 return areaTooltip.style("visibility", "visible").text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
                             })
                 .on('mousemove', function(event,d) {
@@ -833,7 +921,7 @@
                                         .text("popularity : " + d.popularity.toString()+" "+mSelectedIndex+" : "+d.mean );
                             })
                 .on('mouseleave', function(event,d) {
-                                d3.select(this).attr('fill', "red");
+                                d3.select(this).attr('fill', findColorofIndex()).attr('r',6.5);
                                 return areaTooltip.style("visibility", "hidden");
                             })
                 .on('click', function(event,d) {
@@ -842,7 +930,7 @@
                                 showTable();
                             })
           
-            
+            .transition().duration(1200).attr('opacity',1)
 
         }
 
