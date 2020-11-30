@@ -1268,8 +1268,10 @@
 
             // get filtered data
             let tableMData = mData.filter(x => x.date.substring(0, 4) == mSelectedYear)
-                .filter(x => x.genre == mSelectedGenre)
-                .filter(x => x.popularity == mSelectedPopularity);
+                .filter(x => x.genre == mSelectedGenre);
+            let minTempo = tableMData.reduce((prev, next) => parseFloat(prev["tempo"]) < parseFloat(next["tempo"]) ? prev : next)["tempo"];
+            let maxTempo = tableMData.reduce((prev, next) => parseFloat(prev["tempo"]) > parseFloat(next["tempo"]) ? prev : next)["tempo"];
+            tableMData = tableMData.filter(x => x.popularity == mSelectedPopularity);
 
             // define x, y scale of table
             let xScaleStart = d3.scaleOrdinal().domain(column_names).range(["0%", "40%", "70%"]);
@@ -1282,8 +1284,8 @@
 
             // set title of tooltip
             let title = d3.select("span#tooltip-table-title");
-            title.text(mSelectedGenre + ", " + mSelectedYear + " (Popularity: " + mSelectedPopularity + "), "
-                + tableMData.length + " items");
+            title.text(mSelectedYear + " " + mSelectedGenre + " musics (Popularity: " + mSelectedPopularity + "), "
+                + tableMData.length + " item" + (tableMData.length == 1 ? "" : "s"));
 
             // set height of table
             let svg = d3.select("svg#tooltip-table-main")
@@ -1293,7 +1295,7 @@
             let headerItems = svg.append("g").attr("class", "tooltip-table-main-header")
                 .selectAll("text").data(column_names).enter().append("g");
             headerItems.append("rect").attr("x", d => xScaleStart(d)).attr("y", "0px")
-                .attr("rx", "4px").attr("ry", "4px").attr("fill", "black")
+                .attr("rx", "4px").attr("ry", "4px").attr("fill", d3.color(getColorByGenre(mSelectedGenre)).darker(1))
                 .attr("width", d => xWidth(d)).attr("height", "50px")
                 .attr("stroke", "white").attr("stroke-width", "1px");
             headerItems.append("text").attr("class", d => ("tooltip-table-main-header-" + d))
@@ -1308,14 +1310,20 @@
                 })
                 .on("click", function(e, d) {
                     let toggle = column_toggles[column_names.indexOf(d)];
-                    let newTableMData = tableMData.sort((a, b) => toggle * a[d].localeCompare(b[d]));
+                    let newTableMData = tableMData.sort((a, b) => {
+                        if (d == "title" || d == "artist") {
+                            return toggle * a[d].localeCompare(b[d]);
+                        } else {
+                            return toggle * (a[d] < b[d] ? -1 : 1);
+                        }
+                    });
                     column_toggles[column_names.indexOf(d)] = -toggle;
                     d3.select("g.tooltip-table-main-rows").selectAll("g.tooltip-table-main-row").data(newTableMData).each(function (row) {
                         d3.select(this).selectAll("g").data(column_names).each(function (column_name) {
                             d3.select(this).select("text").text(row[column_name]);
                         })
                     })
-                    addLinkToTitle();
+                    addLinkToTitle(minTempo, maxTempo);
                 })
 
             // set contents of table
@@ -1324,14 +1332,14 @@
                 .append("g").attr("class", "tooltip-table-main-row").each(function (row, i) {
                     let rowItems = d3.select(this).selectAll("text").data(column_names).enter().append("g");
                     rowItems.append("rect").attr("x", d => xScaleStart(d)).attr("y", yScale(i + 1) + "px")
-                        .attr("rx", "4px").attr("ry", "4px").attr("fill", "#dddddd")
+                        .attr("rx", "4px").attr("ry", "4px").attr("fill", getColorByGenre(mSelectedGenre))
                         .attr("width", d => xWidth(d)).attr("height", "50px")
                         .attr("stroke", "white").attr("stroke-width", "1px");
                     rowItems.append("text").attr("class", d => ("tooltip-table-main-row-" + d)).text(d => row[d])
                         .attr("alignment-baseline", "middle")
                         .attr("x", d => xScaleStart(d).replace("0", "2")).attr("y", yScale(i + 1) + 25 + "px");
                 });
-            addLinkToTitle();
+            addLinkToTitle(minTempo, maxTempo);
         }
 
         function openTooltip() {
@@ -1352,7 +1360,8 @@
             d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-rows").remove();
         }
 
-        function makeRadarChartData(row) {
+        function makeRadarChartData(row, minTempo, maxTempo) {
+            let tempo = parseFloat(row["tempo"]);
             let data = [{
                 className: 'song', // optional can be used for styling
                 axes: [
@@ -1360,7 +1369,7 @@
                     {axis: "energy", value: parseFloat(row["energy"])},
                     {axis: "acousticness", value: parseFloat(row["acousticness"])},
                     {axis: "danceability", value: parseFloat(row["danceability"])},
-                    {axis: "tempo", value: 0} // TODO normalized tempo
+                    {axis: "tempo", value: (tempo - minTempo) / (maxTempo - minTempo)}
                 ]
             }];
 
@@ -1374,7 +1383,7 @@
             return stringKey[parseInt(key)] + " " + stringMode[parseInt(mode)];
         }
 
-        function addLinkToTitle() {
+        function addLinkToTitle(minTempo, maxTempo) {
             // open new window of songdata.io when title is clicked 
             d3.selectAll("g.tooltip-table-main-row").each(function (row) {
                 let url = "https://songdata.io/track/" + row["id"];
@@ -1383,7 +1392,7 @@
                         RadarChart.defaultConfig.color = getColorByGenre(row["genre"])
                         d3.select("svg#tooltip-radar-chart").remove();
                         d3.select("div#tooltip-radar-chart").append("svg").attr("id", "tooltip-radar-chart")
-                            .attr("width", 200).attr("height", 200).datum(makeRadarChartData(row)).call(RadarChart.chart());
+                            .attr("width", 200).attr("height", 200).datum(makeRadarChartData(row, minTempo, maxTempo)).call(RadarChart.chart());
                         d3.select("span#tooltip-radar-chart-key").html("<b>KEY</b> " + getKeyFromData(row["key"], row["mode"]));
                         d3.select("span#tooltip-radar-chart-bpm").html("<b>BPM</b> " + parseInt(row["tempo"]));
                         d3.select("div#tooltip-radar-chart").style("visibility", "visible");
