@@ -2,6 +2,9 @@
     <head>
         <meta Content-Type:text/html; charset="UTF-8">
         <title>SnuInfoVis Term Project - GPS</title>
+        <link rel="stylesheet" href="stylesheets/radar-chart.css">
+        <script type="text/javascript" src="http://d3js.org/d3.v6.min.js"></script>
+        <script type="text/javascript" src="javascripts/radar-chart.js"></script>
     </head>
     <style>
         #tooltip-table {
@@ -48,8 +51,13 @@
         .tooltip-table-main-row {
             font-size: medium;
         }
+        #tooltip-radar-chart {
+            border: solid;
+            border-width: 2px;
+            border-radius: 4px 4px 4px 4px;
+            background-color: white;
+        }
     </style>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
 
         let SVG_AREA_WIDTH = 500;
@@ -1225,6 +1233,12 @@
             let title = div.append("span").attr("id", "tooltip-table-title");
             let divTable = div.append("div").attr("id", "tooltip-table-div");
             let svg = divTable.append("svg").attr("id", "tooltip-table-main");
+
+            let radarTooltip = d3.select('body').append("div").attr("id", "tooltip-radar-chart")
+                .style("position", "absolute").style("z-index", "10").style("visibility", "hidden")
+                .style("top", 0).style("left", 0)
+            radarTooltip.append("span").attr("id", "tooltip-radar-chart-key").style("display", "block");
+            radarTooltip.append("span").attr("id", "tooltip-radar-chart-bpm").style("display", "block");
         }
 
         function showTable() {
@@ -1317,19 +1331,54 @@
             d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-rows").remove();
         }
 
+        function makeRadarChartData(row) {
+            let data = [{
+                className: 'song', // optional can be used for styling
+                axes: [
+                    {axis: "valence", value: parseFloat(row["valence"])},
+                    {axis: "energy", value: parseFloat(row["energy"])},
+                    {axis: "acousticness", value: parseFloat(row["acousticness"])},
+                    {axis: "danceability", value: parseFloat(row["danceability"])},
+                    {axis: "tempo", value: 0} // TODO normalized tempo
+                ]
+            }];
+
+            return data;
+        }
+
+        function getKeyFromData(key, mode) {
+            const stringKey = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+            const stringMode = ["Minor", "Major"];
+
+            return stringKey[parseInt(key)] + " " + stringMode[parseInt(mode)];
+        }
+
         function addLinkToTitle() {
             // open new window of songdata.io when title is clicked 
             d3.selectAll("g.tooltip-table-main-row").each(function (row) {
                 let url = "https://songdata.io/track/" + row["id"];
                 d3.select(this).select("text.tooltip-table-main-row-title")
                     .on("mouseenter", function() {
+                        RadarChart.defaultConfig.color = getColorByGenre(row["genre"])
+                        d3.select("svg#tooltip-radar-chart").remove();
+                        d3.select("div#tooltip-radar-chart").append("svg").attr("id", "tooltip-radar-chart")
+                            .attr("width", 200).attr("height", 200).datum(makeRadarChartData(row)).call(RadarChart.chart());
+                        d3.select("span#tooltip-radar-chart-key").html("<b>KEY</b> " + getKeyFromData(row["key"], row["mode"]));
+                        d3.select("span#tooltip-radar-chart-bpm").html("<b>BPM</b> " + parseInt(row["tempo"]));
+                        d3.select("div#tooltip-radar-chart").style("visibility", "visible");
                         d3.select(this).style("text-decoration", "underline").style("cursor", "pointer");
                     })
+                    .on("mousemove", function(e) {
+                        d3.select("div#tooltip-radar-chart")
+                            .style("top", (e.pageY < screen.height / 2 ? (e.pageY - 10) : (e.pageY - 190)) + "px")
+                            .style("left", (e.pageX + 10) + "px");
+                    })
                     .on("mouseleave", function() {
+                        d3.select("div#tooltip-radar-chart").style("visibility", "hidden");
                         d3.select(this).style("text-decoration", "none").style("cursor", "default");
                     })
                     .on("click", function() {
-                        window.open(url, "new", "top=100, left=100, width=800, height=600", "_blank");
+                        window.open(url, "new", "top=0, left=100, width=800, height=1000", "_blank");
                     });
             });
         }
