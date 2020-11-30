@@ -78,6 +78,8 @@
         let mSelectedIndex = "danceability";
         let mSelectedPopularity = 72;
 
+        let mAreaColorToRestore;
+        let mAreaSelected;
 
         let initVasePlot =1;
 
@@ -309,6 +311,13 @@
                 prevData[ GENRE_CATEGORY[ i ] ] = 0;
             }
 
+            // area tooltips
+            let areaTooltip = d3.select('body').append('div').style('position', 'absolute')
+                    .style('visibility', 'hidden').style('color', 'gray');
+            let areaTooltipFixed = d3.select('body').append("div").style('position', 'absolute')
+                    .style("top", 350 + "px").style("left", 210 + "px").style("visibility", "hidden")
+                    .text(mSelectedYear + ', ' + mSelectedGenre);
+
             // get counts per key(genre)
             for (let i = 0 ; i < prevSongs.length ; i++) {
                 for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
@@ -352,10 +361,7 @@
                 let curX = prevX + xUnit;
                 let accPrevY = 0;
                 let accCurY = 0;
-                const areaTooltip = d3.select('body').append("div").style("position", "absolute")
-                        .style("visibility", "hidden").style("color", "gray");
-                mAreaTooltipFixed = d3.select('body').append("div").style("position", "absolute")
-                        .style("visibility", "hidden");
+
                 // line with fill from prev to cur
                 for (let j = 0 ; j < GENRE_CATEGORY.length ; j++) {
                     let curGenre = GENRE_CATEGORY[j];
@@ -364,10 +370,10 @@
                             ' V ' + (yBase - accPrevY - (prevData[ curGenre ])) +
                             ' L ' + curX + ' ' + (yBase - accCurY - (curData[ curGenre ])) +
                             ' V ' + (yBase - accCurY);
-                    areaChartSvg.append('path').attr('class', curGenre).attr('fill', curColor)
-                            .attr('id', 'path_' + j).attr('stroke', curColor).attr('d', dStr).style('opacity', 0)
+                    areaChartSvg.append('path').attr('fill', curColor).attr('id', 'genre_' + j)
+                            .attr('stroke', curColor).attr('d', dStr).style('opacity', 0)
                             .on('mouseenter', function() {
-                                if (d3.select(this).attr('id') !=  'selected') {
+                                if (d3.select(this).attr('class') != 'selected') {
                                     d3.select(this).attr('fill', d3.rgb(curColor).darker(1));
                                 }
                                 return areaTooltip.style("visibility", "visible").text(i + ', ' + curGenre);
@@ -376,31 +382,40 @@
                                         .style("left", ( event.pageX + 10 ) + "px")
                                         .text(i + ', ' + curGenre);
                             }).on('mouseleave', function() {
-                                if (d3.select(this).attr('id') != 'selected') {
+                                if (d3.select(this).attr('class') != 'selected') {
                                     d3.select(this).attr('fill', curColor);
                                 }
                                 return areaTooltip.style("visibility", "hidden");
                             }).on('click', function() {
                                 console.log('mouse click(year : ' + i + ', genre : ' + curGenre + ')');
+
+                                // restore the prev
+                                mAreaSelected.attr('fill', mAreaColorToRestore);
+                                mAreaSelected.attr('class', '');
+
+                                // set new one to be selected
+                                mAreaSelected = d3.select(this);
+                                mAreaColorToRestore = curColor;
+                                mAreaSelected.attr('class', 'selected');
+                                mAreaSelected.attr('fill', d3.rgb(curColor).darker(2));
+
                                 mSelectedYear = i;
                                 mSelectedGenre = curGenre;
-                                if (typeof(mAreaSelected) != 'undefined') {
-                                    mAreaSelected.attr('fill', mAreaColorToRestore);
-                                    mAreaSelected.attr('id', '');
-                                }
-                                d3.select(this).attr('id', 'selected');
-                                mAreaColorToRestore = curColor;
-                                mAreaSelected = d3.select(this);
                                 drawVasePlot();
-                                d3.select(this).attr('fill', d3.rgb(curColor).darker(2));
 
-                                return mAreaTooltipFixed.style("top", (event.pageY - 10) + "px")
+                                return areaTooltipFixed.style("top", (event.pageY - 10) + "px")
                                         .style("left", ( event.pageX + 10 ) + "px")
                                         .style("visibility", "visible").text(i + ', ' + curGenre);
+                            }).each(function(){
+                                if (mSelectedYear == i && mSelectedGenre == curGenre) {
+                                    mAreaSelected = d3.select(this);
+                                    mAreaSelected.attr('class', 'selected');
+                                    mAreaColorToRestore = curColor;
+                                }
                             });
                     let border = 'M '  + prevX + ' ' + (yBase - accPrevY - (prevData[ curGenre ])) +
                                  ' L ' + curX + ' ' + (yBase - accCurY - (curData[ curGenre ]));
-                    areaChartSvg.append('path').attr('id', 'path_' + j).style('opacity', 0)
+                    areaChartSvg.append('path').attr('id', 'genre_' + j).style('opacity', 0)
                             .attr('stroke', d3.rgb(curColor).darker(2)).attr('d', border);
                     accPrevY += prevData[ curGenre ];
                     accCurY += curData[ curGenre ];
@@ -411,9 +426,15 @@
 
             // animation
             for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
-                d3.selectAll('#path_' + i).transition().delay((i * 500)).duration(500)
+                d3.selectAll('#genre_' + i).transition().delay((i * 100)).duration(100)
                         .style('opacity', 1);
             }
+
+            // show default selection and fixed tooltip
+            mAreaSelected.transition().delay(GENRE_CATEGORY.length * 100).duration(100)
+                    .attr('fill', d3.rgb(mAreaColorToRestore).darker(2));
+            areaTooltipFixed.transition().delay(GENRE_CATEGORY.length * 100).duration(100)
+                    .style("visibility", "visible");
         }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
