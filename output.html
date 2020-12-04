@@ -133,8 +133,9 @@
             }
             return ret;
         }
-        let colors = ["DarkKhaki"  , "DarkSalmon", "MediumSeaGreen" , "DarkSeaGreen", "MediumTurquoise", "CornFlowerBlue","Plum", "#A569BD"]
-        function getColorByGenre(genre) {
+	
+	let colors = ["DarkSalmon"  , "DarkKhaki", "DarkSeaGreen" , "#7DCEA0", "#48C9B0", "#5DADE2","#BB8FCE", "Plum"]
+	function getColorByGenre(genre) {
             for (let i = 0 ; i < GENRE_CATEGORY.length ; i++) {
                 if (genre == GENRE_CATEGORY[i]) {
                     //return d3.schemeCategory10[i];
