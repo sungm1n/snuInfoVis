@@ -649,22 +649,18 @@
 
             let histogram = d3.histogram()
                 .domain(y.domain())
-                .thresholds(y.ticks(10))    // Important: how many bins approx are going to be made? It is the 'resolution' of the violin plot
+                .thresholds(y.ticks(20))    // Important: how many bins approx are going to be made? It is the 'resolution' of the violin plot
                 .value(d => d)
 
 
 
-            let yScale = d3.scaleLinear().domain([0,1]).range([400,0])
-            let yAxis = d3.axisRight().scale(yScale).tickSize(200)
-
-
-
-
+            let vyScale = d3.scaleLinear().domain([v_min,v_max]).range([y(v_min), y(v_max)])
+            let vyAxis = d3.axisRight().scale(vyScale).tickSize(200)
             //////valence 
             let areaV = d3.area()
-                        .x0(d => -d.length/3) 
-                        .x1(d => d.length/3)
-                        .y(d => yScale(d.x0-0.125))   
+                        .x0(d => -d.length/3 +4.5) 
+                        .x1(d => d.length/3 +4.5)
+                        .y(d => vyScale(d.x0))   
                         .curve(d3.curveCatmullRom)
             
             svg
@@ -685,8 +681,8 @@
             svg
             .append("line")
               .attr('class','whisker_line')
-              .attr("x1", v_center)
-              .attr("x2", v_center)
+              .attr("x1", v_center+4.5)
+              .attr("x2", v_center+4.5)
               .attr("y1", y(v_min) )
               .attr("y2", y(v_max) )
               .attr("stroke", "black")
@@ -703,12 +699,13 @@
               .attr("q3", v_q3)
               .attr("IQR", v_interQuantileRange)
               .attr("max", v_max)
-              .attr("x", v_center - v_width/2)
+              .attr("x", v_center - v_width/2+4.5)
               .attr("y", y(v_q3) )
               .attr("height", (y(v_q1)-y(v_q3)) )
               .attr("width", v_width )
               .attr("stroke", "black")
               .style("fill", "#ff89da")
+              .style("opacity","0.6")
               .attr("stroke-width",0.8)
 
 
@@ -719,8 +716,8 @@
             .enter()
             .append("line")
             .attr('class','box_line')
-              .attr("x1", v_center-v_width/2)
-              .attr("x2", v_center+v_width/2)
+              .attr("x1", v_center-v_width/2 +4.5)
+              .attr("x2", v_center+v_width/2 +4.5)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -729,10 +726,16 @@
 
 
             //////energy  
+
+
+            let eyScale = d3.scaleLinear().domain([e_min,e_max]).range([y(e_min), y(e_max)])
+            let eyAxis = d3.axisRight().scale(eyScale).tickSize(200)
+
+
             let areaE = d3.area()
-                        .x0(d => -d.length/3) 
-                        .x1(d => d.length/3)
-                        .y(d => yScale(d.x0-0.125))   
+                        .x0(d => -d.length/3 +3) 
+                        .x1(d => d.length/3+3)
+                        .y(d => eyScale(d.x0))   
                         .curve(d3.curveCatmullRom)
             
             svg
@@ -753,8 +756,8 @@
             svg
             .append("line")
               .attr('class','whisker_line')
-              .attr("x1", e_center)
-              .attr("x2", e_center)
+              .attr("x1", e_center +3)
+              .attr("x2", e_center+3)
               .attr("y1", y(e_min) )
               .attr("y2", y(e_max) )
               .attr("stroke", "black")
@@ -769,12 +772,13 @@
               .attr("q3", e_q3)
               .attr("IQR", e_interQuantileRange)
               .attr("max", e_max)
-              .attr("x", e_center - e_width/2)
+              .attr("x", e_center - e_width/2 +3)
               .attr("y", y(e_q3) )
               .attr("height", (y(e_q1)-y(e_q3)) )
               .attr("width", e_width )
               .attr("stroke", "black")
               .style("fill", "#00d073")
+              .style("opacity","0.6")
               .attr("stroke-width",0.8)
 
 
@@ -785,19 +789,22 @@
             .enter()
             .append("line")
             .attr('class','box_line')
-              .attr("x1", e_center-e_width/2)
-              .attr("x2", e_center+e_width/2)
+              .attr("x1", e_center-e_width/2+3)
+              .attr("x2", e_center+e_width/2+3)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
               .attr("stroke-width",0.8)
 
 
-            //////acousticness 
+            //////acousticness
+            let ayScale = d3.scaleLinear().domain([a_min,a_max]).range([y(a_min), y(a_max)])
+            let ayAxis = d3.axisRight().scale(ayScale).tickSize(200)
+ 
             let areaA = d3.area()
-                        .x0(d => -d.length/3) 
-                        .x1(d => d.length/3)
-                        .y(d => yScale(d.x0-0.125))   
+                        .x0(d => -d.length/3 +0.5) 
+                        .x1(d => d.length/3+0.5)
+                        .y(d => ayScale(d.x0))   
                         .curve(d3.curveCatmullRom);
             
             svg
@@ -818,8 +825,8 @@
             svg
             .append("line")
               .attr('class','whisker_line')
-              .attr("x1", a_center)
-              .attr("x2", a_center)
+              .attr("x1", a_center+0.5)
+              .attr("x2", a_center+0.5)
               .attr("y1", y(a_min) )
               .attr("y2", y(a_max) )
               .attr("stroke", "black")
@@ -835,12 +842,13 @@
               .attr("q3", a_q3)
               .attr("IQR", a_interQuantileRange)
               .attr("max", a_max)
-              .attr("x", a_center - a_width/2)
+              .attr("x", a_center - a_width/2+0.5)
               .attr("y", y(a_q3) )
               .attr("height", (y(a_q1)-y(a_q3)) )
               .attr("width", a_width )
               .attr("stroke", "black")
               .style("fill", "#ffe587")
+              .style("opacity","0.6")
               .attr("stroke-width",0.8)
 
             // show median, min and max horizontal lines
@@ -850,8 +858,8 @@
             .enter()
             .append("line")
             .attr('class','box_line')
-              .attr("x1", a_center-a_width/2)
-              .attr("x2", a_center+a_width/2)
+              .attr("x1", a_center-a_width/2+0.5)
+              .attr("x2", a_center+a_width/2+0.5)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -859,10 +867,13 @@
 
 
              //danceability  
+             let dyScale = d3.scaleLinear().domain([d_min,d_max]).range([y(d_min), y(d_max)])
+             let dyAxis = d3.axisRight().scale(dyScale).tickSize(200)
+ 
              let areaD = d3.area()
-                        .x0(d => -d.length/3) 
-                        .x1(d => d.length/3)
-                        .y(d => yScale(d.x0-0.125))   
+                        .x0(d => -d.length/3 -1) 
+                        .x1(d => d.length/3-1)
+                        .y(d => dyScale(d.x0))   
                         .curve(d3.curveCatmullRom);
             
             svg
@@ -883,8 +894,8 @@
             svg
             .append("line")
               .attr('class','whisker_line')
-              .attr("x1", d_center)
-              .attr("x2", d_center)
+              .attr("x1", d_center-1)
+              .attr("x2", d_center-1)
               .attr("y1", y(d_min) )
               .attr("y2", y(d_max) )
               .attr("stroke", "black")
@@ -900,12 +911,13 @@
               .attr("q3", d_q3)
               .attr("IQR", d_interQuantileRange)
               .attr("max", d_max)
-              .attr("x", d_center - d_width/2)
+              .attr("x", d_center - d_width/2-1)
               .attr("y", y(d_q3) )
               .attr("height", (y(d_q1)-y(d_q3)) )
               .attr("width", d_width )
               .attr("stroke", "black")
               .style("fill", "#ff7972")
+              .style("opacity","0.6")
               .attr("stroke-width",0.8)
 
 
@@ -916,8 +928,8 @@
             .enter()
             .append("line")
               .attr('class','box_line')
-              .attr("x1", d_center-d_width/2)
-              .attr("x2", d_center+d_width/2)
+              .attr("x1", d_center-d_width/2-1)
+              .attr("x2", d_center+d_width/2-1)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -925,10 +937,13 @@
 
 
             //tempo  
+            let tyScale = d3.scaleLinear().domain([t_min,t_max]).range([y(t_min), y(t_max)])
+            let tyAxis = d3.axisRight().scale(tyScale).tickSize(200)
+ 
             let areaT = d3.area()
-                        .x0(d => -d.length/3) 
+                        .x0(d => -d.length/3-3.5) 
                         .x1(d => d.length/3)
-                        .y(d => yScale(d.x0-0.125))   
+                        .y(d => tyScale(d.x0))   
                         .curve(d3.curveCatmullRom);
             
             svg
@@ -948,8 +963,8 @@
             svg
             .append("line")
               .attr('class','whisker_line')
-              .attr("x1", t_center)
-              .attr("x2", t_center)
+              .attr("x1", t_center-3.5)
+              .attr("x2", t_center-3.5)
               .attr("y1", y(t_min) )
               .attr("y2", y(t_max) )
               .attr("stroke", "black")
@@ -965,12 +980,13 @@
               .attr("q3", t_q3)
               .attr("IQR", t_interQuantileRange)
               .attr("max", t_max)
-              .attr("x", t_center - t_width/2)
+              .attr("x", t_center - t_width/2-3.5)
               .attr("y", y(t_q3) )
               .attr("height", (y(t_q1)-y(t_q3)) )
               .attr("width", t_width )
               .attr("stroke", "black")
               .style("fill", "#4259ff")
+              .style("opacity","0.6")
               .attr("stroke-width",0.8)
 
 
@@ -981,8 +997,8 @@
             .data([t_min, t_median, t_max])
             .enter()
             .append("line")
-              .attr("x1", t_center-t_width/2)
-              .attr("x2", t_center+t_width/2)
+              .attr("x1", t_center-t_width/2-3.5)
+              .attr("x2", t_center+t_width/2-3.5)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
