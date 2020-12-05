@@ -36,7 +36,7 @@
             padding-bottom: 20px;
         }
         #tooltip-table-div {
-            height: 90%;
+            height: 80%;
             overflow-y: scroll;
         }
         /* #tooltip-table-div::-webkit-scrollbar {
@@ -50,6 +50,23 @@
         }
         .tooltip-table-main-row {
             font-size: medium;
+        }
+        .tooltip-table-button {
+            font-size: large;
+            height: 50px;
+            width: 200px;
+            margin-bottom: 20px;
+            margin-left: 30px;
+            margin-right: 30px;
+        }
+        #tooltip-cards-div {
+            height: 80%;
+            overflow-y: scroll;
+        }
+        #tooltip-cards-main {
+            display: block;
+            margin: auto;
+            width: 90%;
         }
         #tooltip-radar-chart {
             border: solid;
@@ -1374,8 +1391,21 @@
                 .on("click", closeTooltip);
 
             let title = div.append("span").attr("id", "tooltip-table-title");
+            let divButtons = div.append("div").attr("id", "tooltip-table-buttons").style("text-align", "center");
+            let but1 = divButtons.append("button").attr("class", "tooltip-table-button").text("Show table")
+                .on("click", function() {
+                    divTable.style("display", null);
+                    divCards.style("display", "none");
+                });
+            let but2 = divButtons.append("button").attr("class", "tooltip-table-button").text("Show cards")
+                .on("click", function() {
+                    divTable.style("display", "none");
+                    divCards.style("display", null);
+                });
             let divTable = div.append("div").attr("id", "tooltip-table-div");
-            let svg = divTable.append("svg").attr("id", "tooltip-table-main");
+            let svgTable = divTable.append("svg").attr("id", "tooltip-table-main");
+            let divCards = div.append("div").attr("id", "tooltip-cards-div").style("display", "none");
+            let svgCards = divCards.append("svg").attr("id", "tooltip-cards-main");
 
             let radarTooltip = d3.select('body').append("div").attr("id", "tooltip-radar-chart")
                 .style("position", "absolute").style("z-index", "10").style("visibility", "hidden")
@@ -1462,6 +1492,36 @@
                         .attr("x", d => xScaleStart(d).replace("0", "2")).attr("y", yScale(i + 1) + 25 + "px");
                 });
             addLinkToTitle(minTempo, maxTempo);
+
+            let svgCards = d3.select("#tooltip-cards-main")
+                .style("height", Math.ceil(tableMData.length / 4) * 300 + "px")
+                .selectAll("g").data(tableMData).enter()
+                .append("g").attr("class", "tooltip-cards-radar-chart").each(function (row, index) {
+                    let i = index - (index % 4), j = index % 4;
+                    RadarChart.defaultConfig.color = getColorByGenre(row["genre"]);
+                    let g = d3.select(this);
+                    g.append("svg").attr("id", "tooltip-radar-chart")
+                        .attr("x", (j * (100 / 4)) + "%").attr("y", (i / 4) * 300)
+                        .attr("width", 200).attr("height", 200)
+                        .datum(makeRadarChartData(row, minTempo, maxTempo)).call(RadarChart.chart());
+                    let title = g.append("text").attr("id", "tooltip-cards-radar-chart-title")
+                        .attr("x", (j * (100 / 4)) + "%").attr("y", (i / 4) * 300 + 220);
+                    title.append("tspan").style("font-weight", "bold").text("TITLE ");
+                    title.append("tspan").text(row["title"]);
+                    let artist = g.append("text").attr("id", "tooltip-cards-radar-chart-artist")
+                        .attr("x", (j * (100 / 4)) + "%").attr("y", (i / 4) * 300 + 240);
+                    artist.append("tspan").style("font-weight", "bold").text("ARTIST ");
+                    artist.append("tspan").text(row["artist"]);
+                    let key = g.append("text").attr("id", "tooltip-cards-radar-chart-key")
+                        .attr("x", (j * (100 / 4)) + "%").attr("y", (i / 4) * 300 + 260);
+                    key.append("tspan").style("font-weight", "bold").text("KEY ");
+                    key.append("tspan").text(getKeyFromData(row["key"], row["mode"]));
+                    let bpm = g.append("text").attr("id", "tooltip-cards-radar-chart-bpm")
+                        .attr("x", (j * (100 / 4)) + "%").attr("y", (i / 4) * 300 + 280);
+                    bpm.append("tspan").style("font-weight", "bold").text("BPM ");
+                    bpm.append("tspan").text(parseInt(row["tempo"]));
+                });
+            addLinkToArea();
         }
 
         function openTooltip() {
@@ -1469,6 +1529,7 @@
             // remove all table contents
             d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-header").remove();
             d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-rows").remove();
+            d3.selectAll("svg#tooltip-cards-main g.tooltip-cards-radar-chart").remove();
 
             // open
             d3.select("div#tooltip-table").style("visibility", "visible");
@@ -1481,6 +1542,7 @@
             // remove all table contents
             d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-header").remove();
             d3.selectAll("svg#tooltip-table-main g.tooltip-table-main-rows").remove();
+            d3.selectAll("svg#tooltip-cards-main g.tooltip-cards-radar-chart").remove();
         }
 
         function makeRadarChartData(row, minTempo, maxTempo) {
@@ -1512,8 +1574,8 @@
                 let url = "https://songdata.io/track/" + row["id"];
                 d3.select(this).select("text.tooltip-table-main-row-title")
                     .on("mouseenter", function() {
-                        RadarChart.defaultConfig.color = getColorByGenre(row["genre"])
-                        d3.select("svg#tooltip-radar-chart").remove();
+                        RadarChart.defaultConfig.color = getColorByGenre(row["genre"]);
+                        d3.select("div#tooltip-radar-chart svg#tooltip-radar-chart").remove();
                         d3.select("div#tooltip-radar-chart").append("svg").attr("id", "tooltip-radar-chart")
                             .attr("width", 200).attr("height", 200).datum(makeRadarChartData(row, minTempo, maxTempo)).call(RadarChart.chart());
                         d3.select("span#tooltip-radar-chart-key").html("<b>KEY</b> " + getKeyFromData(row["key"], row["mode"]));
@@ -1533,6 +1595,22 @@
                     .on("click", function() {
                         window.open(url, "new", "top=0, left=100, width=800, height=1000", "_blank");
                     });
+            });
+        }
+
+        function addLinkToArea() {
+            d3.selectAll("g.tooltip-cards-radar-chart").each(function (row) {
+                let url = "https://songdata.io/track/" + row["id"];
+                d3.select(this).select("svg#tooltip-radar-chart polygon")
+                    .on("mouseenter.f2", function() {
+                        d3.select(this).style("cursor", "pointer");
+                    })
+                    .on("mouseleave.f2", function() {
+                        d3.select(this).style("cursor", "default");
+                    })
+                    .on("click", function() {
+                        window.open(url, "new", "top=0, left=100, width=800, height=1000", "_blank");
+                    })
             });
         }
 
