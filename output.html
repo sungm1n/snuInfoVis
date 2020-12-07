@@ -90,7 +90,7 @@
         let mMinYear = 1970; // fixed
         let mMaxYear = 0;
 
-        let mSelectedYear = 1987;
+        let mSelectedYear = 1991;
         let mSelectedGenre = GENRE_CATEGORY[3];
         let mSelectedIndex = "danceability";
         let mSelectedPopularity = 72;
@@ -98,7 +98,7 @@
         let mAreaColorToRestore;
         let mAreaSelected;
 
-        let initVasePlot =1;
+        let initViolinPlot =1;
 
         let linetototo;
         let lineX;
@@ -123,7 +123,7 @@
             }
 
             drawAreaChart();
-            drawVasePlot();
+            drawViolinPlot();
             initdrawLineChart();
             drawTable();
         }
@@ -419,7 +419,7 @@
 
                                 mSelectedYear = i;
                                 mSelectedGenre = curGenre;
-                                drawVasePlot();
+                                drawViolinPlot();
 
                                 return areaTooltipFixed.style("top", (event.pageY - 10) + "px")
                                         .style("left", ( event.pageX + 10 ) + "px")
@@ -464,7 +464,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        function drawVasePlot() {
+        function drawViolinPlot() {
 
          //disappear with animation    
             d3.selectAll("rect")
@@ -641,7 +641,7 @@
                  height = 500 - margin.top - margin.bottom;
 
             // append the svg object to the body of the page
-            let svg = d3.select("#vase")
+            let svg = d3.select("#violin")
                         .append("svg")
                         .attr("width", width + margin.left + margin.right)
                         .attr("height", height + margin.top + margin.bottom)
@@ -652,7 +652,7 @@
             // Show the X scale
             let x = d3.scaleBand()
                     .range([ 0, width ])
-                    .domain(["valence", "energy", "acousticness","danceability","tempo"])
+                    .domain(["Valence", "Energy", "Acousticness","Danceability","Tempo"])
                     .paddingInner(1)
                     .paddingOuter(.5)
                  svg.append("g")
@@ -667,10 +667,25 @@
 
             let histogram = d3.histogram()
                 .domain(y.domain())
-                .thresholds(y.ticks(20))    // Important: how many bins approx are going to be made? It is the 'resolution' of the violin plot
+                .thresholds(y.ticks(10))    // Important: how many bins approx are going to be made? It is the 'resolution' of the violin plot
                 .value(d => d)
 
+            // gridlines in y axis function
+            /* function make_y_gridlines() {		
+                return d3.axisLeft(y)
+                    .ticks(10)
+            }
 
+
+              // add the Y gridlines
+              svg.append("g")			
+                  .attr("class", "grid")
+                  .style("stroke", "none")
+                  .call(make_y_gridlines()
+                      .tickSize(-width)
+                      .tickFormat("")
+                  ) */
+                    
 
             let vyScale = d3.scaleLinear().domain([v_min,v_max]).range([y(v_min), y(v_max)])
             let vyAxis = d3.axisRight().scale(vyScale).tickSize(200)
@@ -689,7 +704,7 @@
             .append("path")
              .style("stroke", "none")
              .style("fill","pink")
-             .style("opacity","0.8")
+             .style("opacity","1")
               .attr("d", d => areaV(histogram(d)))   // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
         
 
@@ -717,10 +732,10 @@
               .attr("q3", v_q3)
               .attr("IQR", v_interQuantileRange)
               .attr("max", v_max)
-              .attr("x", v_center - v_width/2+4.5)
+              .attr("x", v_center - v_width/4+4.5)
               .attr("y", y(v_q3) )
               .attr("height", (y(v_q1)-y(v_q3)) )
-              .attr("width", v_width )
+              .attr("width", v_width/2 )
               .attr("stroke", "black")
               .style("fill", "#ff89da")
               .style("opacity","0.6")
@@ -734,8 +749,8 @@
             .enter()
             .append("line")
             .attr('class','box_line')
-              .attr("x1", v_center-v_width/2 +4.5)
-              .attr("x2", v_center+v_width/2 +4.5)
+              .attr("x1", v_center-v_width/4 +4.5)
+              .attr("x2", v_center+v_width/4 +4.5)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -764,7 +779,7 @@
             .append("path")
              .style("stroke", "none")
              .style("fill","lightgreen")
-             .style("opacity","0.5")
+             .style("opacity","0.8")
               .attr("d", d => areaE(histogram(d)))   // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
         
 
@@ -790,10 +805,10 @@
               .attr("q3", e_q3)
               .attr("IQR", e_interQuantileRange)
               .attr("max", e_max)
-              .attr("x", e_center - e_width/2 +3)
+              .attr("x", e_center - e_width/4 +3)
               .attr("y", y(e_q3) )
               .attr("height", (y(e_q1)-y(e_q3)) )
-              .attr("width", e_width )
+              .attr("width", e_width/2 )
               .attr("stroke", "black")
               .style("fill", "#00d073")
               .style("opacity","0.6")
@@ -807,8 +822,8 @@
             .enter()
             .append("line")
             .attr('class','box_line')
-              .attr("x1", e_center-e_width/2+3)
-              .attr("x2", e_center+e_width/2+3)
+              .attr("x1", e_center-e_width/4+3)
+              .attr("x2", e_center+e_width/4+3)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -833,7 +848,7 @@
             .append("path")
              .style("stroke", "none")
              .style("fill","yellow")
-             .style("opacity","0.3")
+             .style("opacity","0.4")
               .attr("d", d => areaA(histogram(d)))   // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
         
  
@@ -860,10 +875,10 @@
               .attr("q3", a_q3)
               .attr("IQR", a_interQuantileRange)
               .attr("max", a_max)
-              .attr("x", a_center - a_width/2+0.5)
+              .attr("x", a_center - a_width/4+0.5)
               .attr("y", y(a_q3) )
               .attr("height", (y(a_q1)-y(a_q3)) )
-              .attr("width", a_width )
+              .attr("width", a_width/2 )
               .attr("stroke", "black")
               .style("fill", "#ffe587")
               .style("opacity","0.6")
@@ -876,8 +891,8 @@
             .enter()
             .append("line")
             .attr('class','box_line')
-              .attr("x1", a_center-a_width/2+0.5)
-              .attr("x2", a_center+a_width/2+0.5)
+              .attr("x1", a_center-a_width/4+0.5)
+              .attr("x2", a_center+a_width/4+0.5)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -901,8 +916,8 @@
             .attr("transform", (d)=>"translate(310)") // Translation on the right to be at the group position
             .append("path")
              .style("stroke", "none")
-             .style("fill","red")
-             .style("opacity","0.3")
+             .style("fill","coral")
+             .style("opacity","0.7")
               .attr("d", d => areaD(histogram(d)))   // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
         
 
@@ -929,10 +944,10 @@
               .attr("q3", d_q3)
               .attr("IQR", d_interQuantileRange)
               .attr("max", d_max)
-              .attr("x", d_center - d_width/2-1)
+              .attr("x", d_center - d_width/4-1)
               .attr("y", y(d_q3) )
               .attr("height", (y(d_q1)-y(d_q3)) )
-              .attr("width", d_width )
+              .attr("width", d_width/2 )
               .attr("stroke", "black")
               .style("fill", "#ff7972")
               .style("opacity","0.6")
@@ -946,8 +961,8 @@
             .enter()
             .append("line")
               .attr('class','box_line')
-              .attr("x1", d_center-d_width/2-1)
-              .attr("x2", d_center+d_width/2-1)
+              .attr("x1", d_center-d_width/4-1)
+              .attr("x2", d_center+d_width/4-1)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -960,7 +975,7 @@
  
             let areaT = d3.area()
                         .x0(d => -d.length/3-3.5) 
-                        .x1(d => d.length/3)
+                        .x1(d => d.length/3-3.5)
                         .y(d => tyScale(d.x0))   
                         .curve(d3.curveCatmullRom);
             
@@ -998,10 +1013,10 @@
               .attr("q3", t_q3)
               .attr("IQR", t_interQuantileRange)
               .attr("max", t_max)
-              .attr("x", t_center - t_width/2-3.5)
+              .attr("x", t_center - t_width/4-3.5)
               .attr("y", y(t_q3) )
               .attr("height", (y(t_q1)-y(t_q3)) )
-              .attr("width", t_width )
+              .attr("width", t_width/2 )
               .attr("stroke", "black")
               .style("fill", "#4259ff")
               .style("opacity","0.6")
@@ -1015,8 +1030,8 @@
             .data([t_min, t_median, t_max])
             .enter()
             .append("line")
-              .attr("x1", t_center-t_width/2-3.5)
-              .attr("x2", t_center+t_width/2-3.5)
+              .attr("x1", t_center-t_width/4-3.5)
+              .attr("x2", t_center+t_width/4-3.5)
               .attr("y1", function(d){ return(y(d))} )
               .attr("y2", function(d){ return(y(d))} )
               .attr("stroke", "black")
@@ -1053,9 +1068,9 @@
             w= d3.select(this).attr('x')
             d3.select(this).style("fill", d3.rgb(prev).brighter(0.6));
             return rectTooltip.style("visibility", "visible").style("top", (+h)+80+"px").style("left",(+w)+620+"px")
-            .html("<p class='tooltip'>"  +"Max: " + d3.format(".3f")(q3) +"<br>Q3: " + d3.format(".3f")(q3)
-                                 +"<br>Median: " + d3.format(".3f")(median) + "<br>Q1: " + d3.format(".3f")(q1)
-                                 +  "<br>Min: "+ d3.format(".3f")(min)                 
+            .html("<p class='tooltip'>"  +"Max excluding outlier: " +"<strong>"+ d3.format(".3f")(max)+"</strong>" +"<br>75th percentile: " + "<strong>"+d3.format(".3f")(q3)
+                                 +"</strong>"+"<br>Median: " +"<strong>"+ d3.format(".3f")(median) + "</strong>"+ "<br>25th percentile: " + "<strong>"+d3.format(".3f")(q1) +"</strong>"
+                                 +  "<br>Min excluding outlier: "+ "<strong>" +d3.format(".3f")(min) +"</strong>"                 
             ).style("font-size", "12px").style("background", "white").style("border", "1px solid black").style("padding", "2px")
             .style("box-shadow", "2px 2px 2px 0px black").style("font-family", "verdana"); 
           
@@ -1116,9 +1131,9 @@
                                 }
 
             return selectedTooltip.style("visibility", "visible").style("top", (+h)+80+"px").style("left",(+w)+620+"px")
-            .html("<p class='tooltip'>" + "<strong>" + mSelectedIndex+ "</strong>"  +"<br>Max: " + d3.format(".3f")(q3) +"<br>Q3: " + d3.format(".3f")(q3)
-                                 +"<br>Median: " + d3.format(".3f")(median) + "<br>Q1: " + d3.format(".3f")(q1)
-                                 +  "<br>Min: "+ d3.format(".3f")(min))
+            .html("<p class='tooltip'>" + "<strong>" + mSelectedIndex+ "</strong>" +"<br>Max excluding outlier: " +"<strong>"+ d3.format(".3f")(max)+"</strong>" +"<br>75th percentile: " + "<strong>"+d3.format(".3f")(q3)
+                                 +"</strong>"+"<br>Median: " +"<strong>"+ d3.format(".3f")(median) + "</strong>"+ "<br>25th percentile: " + "<strong>"+d3.format(".3f")(q1) +"</strong>"
+                                 +  "<br>Min excluding outlier: "+ "<strong>" +d3.format(".3f")(min) +"</strong>"   )
                         .style("font-size", "12px").style("background",  d3.rgb(indexColor).brighter(0.6)).style("border", "1px solid black").style("padding", "2px")
                         .style("box-shadow", "2px 2px 2px 0px black").style("font-family", "verdana").style("text-align", "center").style("text-transform", "uppercase"); 
             
@@ -1126,11 +1141,11 @@
                 })
 ;
 
-            if(initVasePlot==0){
+            if(initViolinPlot==0){
               drawLineChart()
             }
             else{
-                initVasePlot=0;
+                initViolinPlot=0;
             }
         }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1623,7 +1638,7 @@
     <body>
         <h1>Loading...</h1>
         <svg id="area" width=500 height=500 />
-        <svg id="vase" width=500 height=500 />
+        <svg id="violin" width=500 height=500 />
     
         <svg id="line" width=1000 height=350 />
     </body>
