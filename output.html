@@ -1089,21 +1089,21 @@
 
             console.log('hi' );
             if (d3.select(this).attr('id') == 'valence') {
-                if(mSelectedIndex!='valence'){
+              //  if(mSelectedIndex!='valence'){
                 mSelectedIndex = 'valence'
                 indexColor = "#ff89da"             
                 console.log(mSelectedIndex)  
                 drawLineChart()
-                }
+              //  }
 
                                 }
             if (d3.select(this).attr('id') == 'energy') {
-                if(mSelectedIndex!='energy'){
+              //  if(mSelectedIndex!='energy'){
                 mSelectedIndex = 'energy'
                 indexColor = "#00d073"
                 console.log(mSelectedIndex)
                 drawLineChart()
-                }
+              //  }
                                 }
             if (d3.select(this).attr('id') == 'acousticness') {
                 if(mSelectedIndex!='acousticness'){
@@ -1114,20 +1114,20 @@
                 }
                                 }
             if (d3.select(this).attr('id') == 'danceability') {
-                if(mSelectedIndex!='danceability'){
+             //   if(mSelectedIndex!='danceability'){
                 mSelectedIndex = 'danceability'
                 indexColor = "#ff7972"
                 console.log(mSelectedIndex)   
                 drawLineChart()
-                }
+             //   }
                                 }
             if (d3.select(this).attr('id') == 'tempo') {
-                if(mSelectedIndex!='tempo'){
+             //   if(mSelectedIndex!='tempo'){
                 mSelectedIndex = 'tempo'
                 indexColor = "#4259ff"
                 console.log(mSelectedIndex) 
                 drawLineChart()
-                }
+             //   }
                                 }
 
             return selectedTooltip.style("visibility", "visible").style("top", (+h)+80+"px").style("left",(+w)+620+"px")
